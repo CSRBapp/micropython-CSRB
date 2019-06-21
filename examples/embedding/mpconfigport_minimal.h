@@ -132,3 +132,7 @@ typedef long mp_off_t;
 #else
 #include <alloca.h>
 #endif
+
+#include <stdint.h>
+extern void mp_csrb_print_strn(const char *str, const uint32_t strSize);
+#define MP_PLAT_PRINT_STRN(str, len) mp_csrb_print_strn(str, len)

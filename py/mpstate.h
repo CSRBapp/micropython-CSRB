@@ -247,15 +247,23 @@ typedef struct _mp_state_thread_t {
     nlr_buf_t *nlr_top;
 } mp_state_thread_t;
 
+struct mp_functions {
+    uint64_t CSRBcontext;
+    char *stdout;
+    uint32_t stdoutSize;
+};
+
 // This structure combines the above 3 structures.
 // The order of the entries are important for root pointer scanning in the GC to work.
 typedef struct _mp_state_ctx_t {
+    struct mp_functions functions;
     mp_state_thread_t thread;
     mp_state_vm_t vm;
     mp_state_mem_t mem;
 } mp_state_ctx_t;
 
-extern mp_state_ctx_t mp_state_ctx;
+#include <threads.h>
+extern thread_local mp_state_ctx_t mp_state_ctx;
 
 #define MP_STATE_VM(x) (mp_state_ctx.vm.x)
 #define MP_STATE_MEM(x) (mp_state_ctx.mem.x)
