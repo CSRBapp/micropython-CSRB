@@ -64,6 +64,7 @@ CC = clang
 LDFLAGS_ARCH = -Wl,-map,$@.map
 else
 # Use gcc syntax for map file
+CC = clang
 LDFLAGS_ARCH = -Wl,-Map=$@.map,--cref
 endif
 LDFLAGS = $(LDFLAGS_MOD) $(LDFLAGS_ARCH) -lm $(LDFLAGS_EXTRA)
@@ -125,11 +126,8 @@ LDFLAGS_MOD += $(LIBFFI_LDFLAGS_MOD)
 SRC_MOD += modffi.c
 endif
 
-MAIN_C = main.c
-
 # source files
 SRC_C = $(addprefix ports/unix/,\
-	$(MAIN_C) \
 	gccollect.c \
 	unix_mphal.c \
 	input.c \

@@ -304,6 +304,14 @@ typedef struct _mp_rom_obj_t { mp_const_obj_t o; } mp_rom_obj_t;
         .table = (mp_map_elem_t*)(mp_rom_map_elem_t*)table_name, \
     }
 
+#define MP_SET_MAP(map_name, table_name) \
+        map_name.all_keys_are_qstrs = 1; \
+        map_name.is_fixed = 1; \
+        map_name.is_ordered = 1; \
+        map_name.used = MP_ARRAY_SIZE(table_name); \
+        map_name.alloc = MP_ARRAY_SIZE(table_name); \
+        map_name.table = (mp_map_elem_t*)(mp_rom_map_elem_t*)table_name;
+
 #define MP_DEFINE_CONST_DICT(dict_name, table_name) \
     const mp_obj_dict_t dict_name = { \
         .base = {&mp_type_dict}, \
@@ -316,6 +324,15 @@ typedef struct _mp_rom_obj_t { mp_const_obj_t o; } mp_rom_obj_t;
             .table = (mp_map_elem_t*)(mp_rom_map_elem_t*)table_name, \
         }, \
     }
+
+#define MP_SET_DICT(dict_name, table_name) \
+        dict_name.base.type = &mp_type_dict; \
+        dict_name.map.all_keys_are_qstrs = 1; \
+        dict_name.map.is_fixed = 1; \
+        dict_name.map.is_ordered = 1; \
+        dict_name.map.used = MP_ARRAY_SIZE(table_name); \
+        dict_name.map.alloc = MP_ARRAY_SIZE(table_name); \
+        dict_name.map.table = (mp_map_elem_t*)(mp_rom_map_elem_t*)table_name;
 
 // These macros are used to declare and define constant staticmethond and classmethod objects
 // You can put "static" in front of the definitions to make them local
