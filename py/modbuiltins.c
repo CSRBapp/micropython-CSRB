@@ -52,7 +52,7 @@ STATIC mp_obj_t mp_builtin___build_class__(size_t n_args, const mp_obj_t *args) 
     // set the new classes __locals__ object
     mp_obj_dict_t *old_locals = mp_locals_get();
     mp_obj_t class_locals = mp_obj_new_dict(0);
-    mp_locals_set(MP_OBJ_TO_PTR(class_locals));
+    mp_locals_set((mp_obj_dict_t*)MP_OBJ_TO_PTR(class_locals));
 
     // call the class code
     mp_obj_t cell = mp_call_function_0(args[0]);
@@ -163,7 +163,7 @@ STATIC mp_obj_t mp_builtin_chr(mp_obj_t o_in) {
     #else
     mp_int_t ord = mp_obj_get_int(o_in);
     if (0 <= ord && ord <= 0xff) {
-        uint8_t str[1] = {ord};
+        uint8_t str[1] = {(uint8_t)ord};
         return mp_obj_new_str_via_qstr((char*)str, 1);
     } else {
         mp_raise_ValueError("chr() arg not in range(256)");

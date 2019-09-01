@@ -45,7 +45,7 @@ typedef struct _mp_obj_gen_instance_t {
 
 STATIC mp_obj_t gen_wrap_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     // A generating function is just a bytecode function with type mp_type_gen_wrap
-    mp_obj_fun_bc_t *self_fun = MP_OBJ_TO_PTR(self_in);
+    mp_obj_fun_bc_t *self_fun = (mp_obj_fun_bc_t*)MP_OBJ_TO_PTR(self_in);
 
     // bytecode prelude: get state size and exception stack size
     size_t n_state = mp_decode_uint_value(self_fun->bytecode);
@@ -125,14 +125,14 @@ const mp_obj_type_t mp_type_native_gen_wrap = {
 
 STATIC void gen_instance_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     (void)kind;
-    mp_obj_gen_instance_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_gen_instance_t *self = (mp_obj_gen_instance_t*)MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "<generator object '%q' at %p>", mp_obj_fun_get_name(MP_OBJ_FROM_PTR(self->code_state.fun_bc)), self);
 }
 
 mp_vm_return_kind_t mp_obj_gen_resume(mp_obj_t self_in, mp_obj_t send_value, mp_obj_t throw_value, mp_obj_t *ret_val) {
     MP_STACK_CHECK();
     mp_check_self(mp_obj_is_type(self_in, &mp_type_gen_instance));
-    mp_obj_gen_instance_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_gen_instance_t *self = (mp_obj_gen_instance_t*)MP_OBJ_TO_PTR(self_in);
     if (self->code_state.ip == 0) {
         // Trying to resume already stopped generator
         *ret_val = MP_OBJ_STOP_ITERATION;
@@ -298,7 +298,7 @@ STATIC mp_obj_t gen_instance_close(mp_obj_t self_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(gen_instance_close_obj, gen_instance_close);
 
 STATIC mp_obj_t gen_instance_pend_throw(mp_obj_t self_in, mp_obj_t exc_in) {
-    mp_obj_gen_instance_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_gen_instance_t *self = (mp_obj_gen_instance_t*)MP_OBJ_TO_PTR(self_in);
     if (self->code_state.sp == self->code_state.state - 1) {
         mp_raise_TypeError("can't pend throw to just-started generator");
     }

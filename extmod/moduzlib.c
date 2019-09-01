@@ -49,7 +49,7 @@ typedef struct _mp_obj_decompio_t {
 } mp_obj_decompio_t;
 
 STATIC int read_src_stream(TINF_DATA *data) {
-    byte *p = (void*)data;
+    byte *p = (byte*)data;
     p -= offsetof(mp_obj_decompio_t, decomp);
     mp_obj_decompio_t *self = (mp_obj_decompio_t*)p;
 
@@ -104,12 +104,12 @@ header_error:
 }
 
 STATIC mp_uint_t decompio_read(mp_obj_t o_in, void *buf, mp_uint_t size, int *errcode) {
-    mp_obj_decompio_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_decompio_t *o = (mp_obj_decompio_t*)MP_OBJ_TO_PTR(o_in);
     if (o->eof) {
         return 0;
     }
 
-    o->decomp.dest = buf;
+    o->decomp.dest = (unsigned char*)buf;
     o->decomp.dest_limit = (byte*)buf + size;
     int st = uzlib_uncompress_chksum(&o->decomp);
     if (st == TINF_DONE) {
@@ -139,7 +139,7 @@ STATIC const mp_obj_type_t decompio_type = {
     .name = MP_QSTR_DecompIO,
     .make_new = decompio_make_new,
     .protocol = &decompio_stream_p,
-    .locals_dict = (void*)&decompio_locals_dict,
+    .locals_dict = (mp_obj_dict_t*)&decompio_locals_dict,
 };
 
 STATIC mp_obj_t mod_uzlib_decompress(size_t n_args, const mp_obj_t *args) {
@@ -157,7 +157,7 @@ STATIC mp_obj_t mod_uzlib_decompress(size_t n_args, const mp_obj_t *args) {
     decomp->dest = dest_buf;
     decomp->dest_limit = dest_buf + dest_buf_size;
     DEBUG_printf("uzlib: Initial out buffer: " UINT_FMT " bytes\n", dest_buf_size);
-    decomp->source = bufinfo.buf;
+    decomp->source = (const unsigned char*)bufinfo.buf;
     decomp->source_limit = (byte*)bufinfo.buf + bufinfo.len;
 
     int st;

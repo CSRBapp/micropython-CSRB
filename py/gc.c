@@ -132,7 +132,7 @@ void gc_init(void *start, void *end) {
 
     size_t gc_pool_block_len = MP_STATE_MEM(gc_alloc_table_byte_len) * BLOCKS_PER_ATB;
     MP_STATE_MEM(gc_pool_start) = (byte*)end - gc_pool_block_len * BYTES_PER_BLOCK;
-    MP_STATE_MEM(gc_pool_end) = end;
+    MP_STATE_MEM(gc_pool_end) = (byte*)end;
 
 #if MICROPY_ENABLE_FINALISER
     assert(MP_STATE_MEM(gc_pool_start) >= MP_STATE_MEM(gc_finaliser_table_start) + gc_finaliser_table_byte_len);

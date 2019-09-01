@@ -1123,7 +1123,7 @@ STATIC void do_import_name(compiler_t *comp, mp_parse_node_t pn, qstr *q_base) {
             for (int i = 0; i < n; i++) {
                 len += qstr_len(MP_PARSE_NODE_LEAF_ARG(pns->nodes[i]));
             }
-            char *q_ptr = mp_local_alloc(len);
+            char *q_ptr = (char*)mp_local_alloc(len);
             char *str_dest = q_ptr;
             for (int i = 0; i < n; i++) {
                 if (i > 0) {
@@ -2189,7 +2189,7 @@ STATIC void compile_star_expr(compiler_t *comp, mp_parse_node_struct_t *pns) {
 STATIC void compile_binary_op(compiler_t *comp, mp_parse_node_struct_t *pns) {
     MP_STATIC_ASSERT(MP_BINARY_OP_OR + PN_xor_expr - PN_expr == MP_BINARY_OP_XOR);
     MP_STATIC_ASSERT(MP_BINARY_OP_OR + PN_and_expr - PN_expr == MP_BINARY_OP_AND);
-    mp_binary_op_t binary_op = MP_BINARY_OP_OR + MP_PARSE_NODE_STRUCT_KIND(pns) - PN_expr;
+    mp_binary_op_t binary_op = (mp_binary_op_t)(MP_BINARY_OP_OR + MP_PARSE_NODE_STRUCT_KIND(pns) - PN_expr);
     int num_nodes = MP_PARSE_NODE_STRUCT_NUM_NODES(pns);
     compile_node(comp, pns->nodes[0]);
     for (int i = 1; i < num_nodes; ++i) {
@@ -2204,7 +2204,7 @@ STATIC void compile_term(compiler_t *comp, mp_parse_node_struct_t *pns) {
     for (int i = 1; i + 1 < num_nodes; i += 2) {
         compile_node(comp, pns->nodes[i + 1]);
         mp_binary_op_t op;
-        mp_token_kind_t tok = MP_PARSE_NODE_LEAF_ARG(pns->nodes[i]);
+        mp_token_kind_t tok = (mp_token_kind_t)MP_PARSE_NODE_LEAF_ARG(pns->nodes[i]);
         switch (tok) {
             case MP_TOKEN_OP_PLUS:      op = MP_BINARY_OP_ADD; break;
             case MP_TOKEN_OP_MINUS:     op = MP_BINARY_OP_SUBTRACT; break;
@@ -2225,7 +2225,7 @@ STATIC void compile_term(compiler_t *comp, mp_parse_node_struct_t *pns) {
 STATIC void compile_factor_2(compiler_t *comp, mp_parse_node_struct_t *pns) {
     compile_node(comp, pns->nodes[1]);
     mp_unary_op_t op;
-    mp_token_kind_t tok = MP_PARSE_NODE_LEAF_ARG(pns->nodes[0]);
+    mp_token_kind_t tok = (mp_token_kind_t)MP_PARSE_NODE_LEAF_ARG(pns->nodes[0]);
     switch (tok) {
         case MP_TOKEN_OP_PLUS:  op = MP_UNARY_OP_POSITIVE; break;
         case MP_TOKEN_OP_MINUS: op = MP_UNARY_OP_NEGATIVE; break;
@@ -2810,7 +2810,7 @@ STATIC void compile_node(compiler_t *comp, mp_parse_node_t pn) {
                     // or when single_input lets through a NEWLINE (user enters a blank line)
                     // do nothing
                 } else {
-                  EMIT_ARG(load_const_tok, arg);
+                  EMIT_ARG(load_const_tok, (mp_token_kind_t)arg);
                 }
                 break;
         }

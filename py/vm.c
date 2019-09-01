@@ -100,7 +100,7 @@
     DECODE_ULABEL; /* except labels are always forward */ \
     ++exc_sp; \
     exc_sp->handler = ip + ulab; \
-    exc_sp->val_sp = MP_TAGPTR_MAKE(sp, ((with_or_finally) << 1)); \
+    exc_sp->val_sp = (void**)MP_TAGPTR_MAKE(sp, ((with_or_finally) << 1)); \
     exc_sp->prev_exc = NULL; \
 } while (0)
 
@@ -159,7 +159,7 @@ run_code_state: ;
     }
 
     // variables that are visible to the exception handler (declared volatile)
-    mp_exc_stack_t *volatile exc_sp = MP_TAGPTR_PTR(code_state->exc_sp); // stack grows up, exc_sp points to top of stack
+    mp_exc_stack_t *volatile exc_sp = (mp_exc_stack_t*)MP_TAGPTR_PTR(code_state->exc_sp); // stack grows up, exc_sp points to top of stack
 
     #if MICROPY_PY_THREAD_GIL && MICROPY_PY_THREAD_GIL_VM_DIVISOR
     // This needs to be volatile and outside the VM loop so it persists across handling
@@ -856,7 +856,7 @@ unwind_jump:;
 
                 ENTRY(MP_BC_MAKE_FUNCTION): {
                     DECODE_PTR;
-                    PUSH(mp_make_function_from_raw_code(ptr, MP_OBJ_NULL, MP_OBJ_NULL));
+                    PUSH(mp_make_function_from_raw_code((const mp_raw_code_t*)ptr, MP_OBJ_NULL, MP_OBJ_NULL));
                     DISPATCH();
                 }
 
@@ -864,7 +864,7 @@ unwind_jump:;
                     DECODE_PTR;
                     // Stack layout: def_tuple def_dict <- TOS
                     mp_obj_t def_dict = POP();
-                    SET_TOP(mp_make_function_from_raw_code(ptr, TOP(), def_dict));
+                    SET_TOP(mp_make_function_from_raw_code((const mp_raw_code_t*)ptr, TOP(), def_dict));
                     DISPATCH();
                 }
 
@@ -873,7 +873,7 @@ unwind_jump:;
                     size_t n_closed_over = *ip++;
                     // Stack layout: closed_overs <- TOS
                     sp -= n_closed_over - 1;
-                    SET_TOP(mp_make_closure_from_raw_code(ptr, n_closed_over, sp));
+                    SET_TOP(mp_make_closure_from_raw_code((const mp_raw_code_t*)ptr, n_closed_over, sp));
                     DISPATCH();
                 }
 
@@ -882,7 +882,7 @@ unwind_jump:;
                     size_t n_closed_over = *ip++;
                     // Stack layout: def_tuple def_dict closed_overs <- TOS
                     sp -= 2 + n_closed_over - 1;
-                    SET_TOP(mp_make_closure_from_raw_code(ptr, 0x100 | n_closed_over, sp));
+                    SET_TOP(mp_make_closure_from_raw_code((const mp_raw_code_t*)ptr, 0x100 | n_closed_over, sp));
                     DISPATCH();
                 }
 
@@ -1064,7 +1064,7 @@ unwind_return:
                             // pass to the finally code.  We simply copy the ret_value down
                             // over these iterators, if they exist.  If they don't then the
                             // following is a null operation.
-                            mp_obj_t *finally_sp = MP_TAGPTR_PTR(exc_sp->val_sp);
+                            mp_obj_t *finally_sp = (mp_obj_t*)MP_TAGPTR_PTR(exc_sp->val_sp);
                             finally_sp[1] = sp[0];
                             sp = &finally_sp[1];
                             // We're going to run "finally" code as a coroutine
@@ -1135,7 +1135,7 @@ yield:
                     nlr_pop();
                     code_state->ip = ip;
                     code_state->sp = sp;
-                    code_state->exc_sp = MP_TAGPTR_MAKE(exc_sp, 0);
+                    code_state->exc_sp = (mp_exc_stack_t*)MP_TAGPTR_MAKE(exc_sp, 0);
                     return MP_VM_RETURN_YIELD;
 
                 ENTRY(MP_BC_YIELD_FROM): {
@@ -1252,12 +1252,12 @@ yield:
                         fastn[MP_BC_STORE_FAST_MULTI - (mp_int_t)ip[-1]] = POP();
                         DISPATCH();
                     } else if (ip[-1] < MP_BC_UNARY_OP_MULTI + MP_UNARY_OP_NUM_BYTECODE) {
-                        SET_TOP(mp_unary_op(ip[-1] - MP_BC_UNARY_OP_MULTI, TOP()));
+                        SET_TOP(mp_unary_op((mp_unary_op_t)(ip[-1] - MP_BC_UNARY_OP_MULTI), TOP()));
                         DISPATCH();
                     } else if (ip[-1] < MP_BC_BINARY_OP_MULTI + MP_BINARY_OP_NUM_BYTECODE) {
                         mp_obj_t rhs = POP();
                         mp_obj_t lhs = TOP();
-                        SET_TOP(mp_binary_op(ip[-1] - MP_BC_BINARY_OP_MULTI, lhs, rhs));
+                        SET_TOP(mp_binary_op((mp_binary_op_t)(ip[-1] - MP_BC_BINARY_OP_MULTI), lhs, rhs));
                         DISPATCH();
                     } else
 #endif
@@ -1425,9 +1425,9 @@ unwind_loop:
             if (exc_sp >= exc_stack) {
                 // catch exception and pass to byte code
                 code_state->ip = exc_sp->handler;
-                mp_obj_t *sp = MP_TAGPTR_PTR(exc_sp->val_sp);
+                mp_obj_t *sp = (mp_obj_t*)MP_TAGPTR_PTR(exc_sp->val_sp);
                 // save this exception in the stack so it can be used in a reraise, if needed
-                exc_sp->prev_exc = nlr.ret_val;
+                exc_sp->prev_exc = (mp_obj_base_t*)nlr.ret_val;
                 // push exception object so it can be handled by bytecode
                 PUSH(MP_OBJ_FROM_PTR(nlr.ret_val));
                 code_state->sp = sp;

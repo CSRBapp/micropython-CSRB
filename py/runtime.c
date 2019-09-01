@@ -339,7 +339,7 @@ mp_obj_t mp_binary_op(mp_binary_op_t op, mp_obj_t lhs, mp_obj_t rhs) {
                 return mp_const_false;
             }
         } else if (mp_obj_is_type(rhs, &mp_type_tuple)) {
-            mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(rhs);
+            mp_obj_tuple_t *tuple = (mp_obj_tuple_t *)MP_OBJ_TO_PTR(rhs);
             for (size_t i = 0; i < tuple->len; i++) {
                 rhs = tuple->items[i];
                 if (!mp_obj_is_exception_type(rhs)) {
@@ -501,7 +501,7 @@ mp_obj_t mp_binary_op(mp_binary_op_t op, mp_obj_t lhs, mp_obj_t rhs) {
                         goto zero_division;
                     }
                     // to reduce stack usage we don't pass a temp array of the 2 items
-                    mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(2, NULL));
+                    mp_obj_tuple_t *tuple = (mp_obj_tuple_t *)MP_OBJ_TO_PTR(mp_obj_new_tuple(2, NULL));
                     tuple->items[0] = MP_OBJ_NEW_SMALL_INT(mp_small_int_floor_divide(lhs_val, rhs_val));
                     tuple->items[1] = MP_OBJ_NEW_SMALL_INT(mp_small_int_modulo(lhs_val, rhs_val));
                     return MP_OBJ_FROM_PTR(tuple);
@@ -688,7 +688,7 @@ void mp_call_prepare_args_n_kw_var(bool have_self, size_t n_args_n_kw, const mp_
 
         // allocate memory for the new array of args
         args2_alloc = 1 + n_args + 2 * (n_kw + kw_dict_len);
-        args2 = mp_nonlocal_alloc(args2_alloc * sizeof(mp_obj_t));
+        args2 = (mp_obj_t *)mp_nonlocal_alloc(args2_alloc * sizeof(mp_obj_t));
 
         // copy the self
         if (self != MP_OBJ_NULL) {
@@ -709,7 +709,7 @@ void mp_call_prepare_args_n_kw_var(bool have_self, size_t n_args_n_kw, const mp_
 
         // allocate memory for the new array of args
         args2_alloc = 1 + n_args + len + 2 * (n_kw + kw_dict_len);
-        args2 = mp_nonlocal_alloc(args2_alloc * sizeof(mp_obj_t));
+        args2 = (mp_obj_t *)mp_nonlocal_alloc(args2_alloc * sizeof(mp_obj_t));
 
         // copy the self
         if (self != MP_OBJ_NULL) {
@@ -725,7 +725,7 @@ void mp_call_prepare_args_n_kw_var(bool have_self, size_t n_args_n_kw, const mp_
 
         // allocate memory for the new array of args
         args2_alloc = 1 + n_args + 2 * (n_kw + kw_dict_len) + 3;
-        args2 = mp_nonlocal_alloc(args2_alloc * sizeof(mp_obj_t));
+        args2 = (mp_obj_t *)mp_nonlocal_alloc(args2_alloc * sizeof(mp_obj_t));
 
         // copy the self
         if (self != MP_OBJ_NULL) {
@@ -742,7 +742,7 @@ void mp_call_prepare_args_n_kw_var(bool have_self, size_t n_args_n_kw, const mp_
         mp_obj_t item;
         while ((item = mp_iternext(iterable)) != MP_OBJ_STOP_ITERATION) {
             if (args2_len >= args2_alloc) {
-                args2 = mp_nonlocal_realloc(args2, args2_alloc * sizeof(mp_obj_t), args2_alloc * 2 * sizeof(mp_obj_t));
+                args2 = (mp_obj_t *)mp_nonlocal_realloc(args2, args2_alloc * sizeof(mp_obj_t), args2_alloc * 2 * sizeof(mp_obj_t));
                 args2_alloc *= 2;
             }
             args2[args2_len++] = item;
@@ -793,7 +793,7 @@ void mp_call_prepare_args_n_kw_var(bool have_self, size_t n_args_n_kw, const mp_
                 if (new_alloc < 4) {
                     new_alloc = 4;
                 }
-                args2 = mp_nonlocal_realloc(args2, args2_alloc * sizeof(mp_obj_t), new_alloc * sizeof(mp_obj_t));
+                args2 = (mp_obj_t *)mp_nonlocal_realloc(args2, args2_alloc * sizeof(mp_obj_t), new_alloc * sizeof(mp_obj_t));
                 args2_alloc = new_alloc;
             }
 
@@ -915,7 +915,7 @@ void mp_unpack_ex(mp_obj_t seq_in, size_t num_in, mp_obj_t *items) {
             }
             items[num_left + num_right + 1 - 1 - seq_len] = item;
         }
-        mp_obj_list_t *rest = MP_OBJ_TO_PTR(mp_obj_new_list(0, NULL));
+        mp_obj_list_t *rest = (mp_obj_list_t *)MP_OBJ_TO_PTR(mp_obj_new_list(0, NULL));
         while ((item = mp_iternext(iterable)) != MP_OBJ_STOP_ITERATION) {
             mp_obj_list_append(MP_OBJ_FROM_PTR(rest), item);
         }
@@ -1377,7 +1377,7 @@ import_error:
     const char *pkg_name = mp_obj_str_get_data(dest[0], &pkg_name_len);
 
     const uint dot_name_len = pkg_name_len + 1 + qstr_len(name);
-    char *dot_name = mp_local_alloc(dot_name_len);
+    char *dot_name = (char *)mp_local_alloc(dot_name_len);
     memcpy(dot_name, pkg_name, pkg_name_len);
     dot_name[pkg_name_len] = '.';
     memcpy(dot_name + pkg_name_len + 1, qstr_str(name), qstr_len(name));

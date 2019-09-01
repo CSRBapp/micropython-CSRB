@@ -51,7 +51,7 @@
 STATIC mp_obj_t fun_builtin_0_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     (void)args;
     assert(mp_obj_is_type(self_in, &mp_type_fun_builtin_0));
-    mp_obj_fun_builtin_fixed_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_fun_builtin_fixed_t *self = (mp_obj_fun_builtin_fixed_t*)MP_OBJ_TO_PTR(self_in);
     mp_arg_check_num(n_args, n_kw, 0, 0, false);
     return self->fun._0();
 }
@@ -65,7 +65,7 @@ const mp_obj_type_t mp_type_fun_builtin_0 = {
 
 STATIC mp_obj_t fun_builtin_1_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     assert(mp_obj_is_type(self_in, &mp_type_fun_builtin_1));
-    mp_obj_fun_builtin_fixed_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_fun_builtin_fixed_t *self = (mp_obj_fun_builtin_fixed_t*)MP_OBJ_TO_PTR(self_in);
     mp_arg_check_num(n_args, n_kw, 1, 1, false);
     return self->fun._1(args[0]);
 }
@@ -79,7 +79,7 @@ const mp_obj_type_t mp_type_fun_builtin_1 = {
 
 STATIC mp_obj_t fun_builtin_2_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     assert(mp_obj_is_type(self_in, &mp_type_fun_builtin_2));
-    mp_obj_fun_builtin_fixed_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_fun_builtin_fixed_t *self = (mp_obj_fun_builtin_fixed_t*)MP_OBJ_TO_PTR(self_in);
     mp_arg_check_num(n_args, n_kw, 2, 2, false);
     return self->fun._2(args[0], args[1]);
 }
@@ -93,7 +93,7 @@ const mp_obj_type_t mp_type_fun_builtin_2 = {
 
 STATIC mp_obj_t fun_builtin_3_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     assert(mp_obj_is_type(self_in, &mp_type_fun_builtin_3));
-    mp_obj_fun_builtin_fixed_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_fun_builtin_fixed_t *self = (mp_obj_fun_builtin_fixed_t*)MP_OBJ_TO_PTR(self_in);
     mp_arg_check_num(n_args, n_kw, 3, 3, false);
     return self->fun._3(args[0], args[1], args[2]);
 }
@@ -107,7 +107,7 @@ const mp_obj_type_t mp_type_fun_builtin_3 = {
 
 STATIC mp_obj_t fun_builtin_var_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     assert(mp_obj_is_type(self_in, &mp_type_fun_builtin_var));
-    mp_obj_fun_builtin_var_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_fun_builtin_var_t *self = (mp_obj_fun_builtin_var_t*)MP_OBJ_TO_PTR(self_in);
 
     // check number of arguments
     mp_arg_check_num_sig(n_args, n_kw, self->sig);
@@ -152,7 +152,7 @@ STATIC const mp_obj_type_t mp_type_fun_native;
 #endif
 
 qstr mp_obj_fun_get_name(mp_const_obj_t fun_in) {
-    const mp_obj_fun_bc_t *fun = MP_OBJ_TO_PTR(fun_in);
+    const mp_obj_fun_bc_t *fun = (const mp_obj_fun_bc_t*)MP_OBJ_TO_PTR(fun_in);
     #if MICROPY_EMIT_NATIVE
     if (fun->base.type == &mp_type_fun_native || fun->base.type == &mp_type_native_gen_wrap) {
         // TODO native functions don't have name stored
@@ -173,7 +173,7 @@ qstr mp_obj_fun_get_name(mp_const_obj_t fun_in) {
 #if MICROPY_CPYTHON_COMPAT
 STATIC void fun_bc_print(const mp_print_t *print, mp_obj_t o_in, mp_print_kind_t kind) {
     (void)kind;
-    mp_obj_fun_bc_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_fun_bc_t *o = (mp_obj_fun_bc_t*)MP_OBJ_TO_PTR(o_in);
     mp_printf(print, "<function %q at 0x%p>", mp_obj_fun_get_name(o_in), o);
 }
 #endif
@@ -253,7 +253,7 @@ STATIC mp_obj_t fun_bc_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const 
     DEBUG_printf("Input kw args: ");
     dump_args(args + n_args, n_kw * 2);
 
-    mp_obj_fun_bc_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_fun_bc_t *self = (mp_obj_fun_bc_t*)MP_OBJ_TO_PTR(self_in);
 
     size_t n_state, state_size;
     DECODE_CODESTATE_SIZE(self->bytecode, n_state, state_size);
@@ -272,7 +272,7 @@ STATIC mp_obj_t fun_bc_call(mp_obj_t self_in, size_t n_args, size_t n_kw, const 
         #endif
     }
     if (code_state == NULL) {
-        code_state = alloca(sizeof(mp_code_state_t) + state_size);
+        code_state = (mp_code_state_t*)alloca(sizeof(mp_code_state_t) + state_size);
         #if MICROPY_DEBUG_VM_STACK_OVERFLOW
         memset(code_state->state, 0, state_size);
         #endif
@@ -371,7 +371,7 @@ const mp_obj_type_t mp_type_fun_bc = {
 mp_obj_t mp_obj_new_fun_bc(mp_obj_t def_args_in, mp_obj_t def_kw_args, const byte *code, const mp_uint_t *const_table) {
     size_t n_def_args = 0;
     size_t n_extra_args = 0;
-    mp_obj_tuple_t *def_args = MP_OBJ_TO_PTR(def_args_in);
+    mp_obj_tuple_t *def_args = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(def_args_in);
     if (def_args_in != MP_OBJ_NULL) {
         assert(mp_obj_is_type(def_args_in, &mp_type_tuple));
         n_def_args = def_args->len;

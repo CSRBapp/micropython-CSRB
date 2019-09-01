@@ -40,7 +40,7 @@ typedef struct _mp_obj_range_it_t {
 } mp_obj_range_it_t;
 
 STATIC mp_obj_t range_it_iternext(mp_obj_t o_in) {
-    mp_obj_range_it_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_range_it_t *o = (mp_obj_range_it_t*)MP_OBJ_TO_PTR(o_in);
     if ((o->step > 0 && o->cur < o->stop) || (o->step < 0 && o->cur > o->stop)) {
         mp_obj_t o_out = MP_OBJ_NEW_SMALL_INT(o->cur);
         o->cur += o->step;
@@ -80,7 +80,7 @@ typedef struct _mp_obj_range_t {
 
 STATIC void range_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     (void)kind;
-    mp_obj_range_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_range_t *self = (mp_obj_range_t*)MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "range(" INT_FMT ", " INT_FMT "", self->start, self->stop);
     if (self->step == 1) {
         mp_print_str(print, ")");
@@ -129,7 +129,7 @@ STATIC mp_int_t range_len(mp_obj_range_t *self) {
 }
 
 STATIC mp_obj_t range_unary_op(mp_unary_op_t op, mp_obj_t self_in) {
-    mp_obj_range_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_range_t *self = (mp_obj_range_t*)MP_OBJ_TO_PTR(self_in);
     mp_int_t len = range_len(self);
     switch (op) {
         case MP_UNARY_OP_BOOL: return mp_obj_new_bool(len > 0);
@@ -159,7 +159,7 @@ STATIC mp_obj_t range_binary_op(mp_binary_op_t op, mp_obj_t lhs_in, mp_obj_t rhs
 STATIC mp_obj_t range_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
     if (value == MP_OBJ_SENTINEL) {
         // load
-        mp_obj_range_t *self = MP_OBJ_TO_PTR(self_in);
+        mp_obj_range_t *self = (mp_obj_range_t*)MP_OBJ_TO_PTR(self_in);
         mp_int_t len = range_len(self);
 #if MICROPY_PY_BUILTINS_SLICE
         if (mp_obj_is_type(index, &mp_type_slice)) {
@@ -185,7 +185,7 @@ STATIC mp_obj_t range_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
 }
 
 STATIC mp_obj_t range_getiter(mp_obj_t o_in, mp_obj_iter_buf_t *iter_buf) {
-    mp_obj_range_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_range_t *o = (mp_obj_range_t*)MP_OBJ_TO_PTR(o_in);
     return mp_obj_new_range_iterator(o->start, o->stop, o->step, iter_buf);
 }
 
@@ -196,7 +196,7 @@ STATIC void range_attr(mp_obj_t o_in, qstr attr, mp_obj_t *dest) {
         // not load attribute
         return;
     }
-    mp_obj_range_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_range_t *o = (mp_obj_range_t*)MP_OBJ_TO_PTR(o_in);
     if (attr == MP_QSTR_start) {
         dest[0] = mp_obj_new_int(o->start);
     } else if (attr == MP_QSTR_stop) {
