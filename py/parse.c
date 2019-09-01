@@ -441,7 +441,7 @@ STATIC void push_result_node(parser_t *parser, mp_parse_node_t pn) {
 }
 
 STATIC mp_parse_node_t make_node_const_object(parser_t *parser, size_t src_line, mp_obj_t obj) {
-    mp_parse_node_struct_t *pn = parser_alloc(parser, sizeof(mp_parse_node_struct_t) + sizeof(mp_obj_t));
+    mp_parse_node_struct_t *pn = (mp_parse_node_struct_t*)parser_alloc(parser, sizeof(mp_parse_node_struct_t) + sizeof(mp_obj_t));
     pn->source_line = src_line;
     #if MICROPY_OBJ_REPR == MICROPY_OBJ_REPR_D
     // nodes are 32-bit pointers, but need to store 64-bit object
@@ -643,7 +643,7 @@ STATIC bool fold_constants(parser_t *parser, uint8_t rule_id, size_t num_args) {
             if (!mp_parse_node_get_int_maybe(pn, &arg1)) {
                 return false;
             }
-            mp_token_kind_t tok = MP_PARSE_NODE_LEAF_ARG(peek_result(parser, i));
+            mp_token_kind_t tok = (mp_token_kind_t)MP_PARSE_NODE_LEAF_ARG(peek_result(parser, i));
             static const uint8_t token_to_op[] = {
                 MP_BINARY_OP_ADD,
                 MP_BINARY_OP_SUBTRACT,
@@ -657,7 +657,7 @@ STATIC bool fold_constants(parser_t *parser, uint8_t rule_id, size_t num_args) {
                 255,//MP_BINARY_OP_MORE
                 MP_BINARY_OP_RSHIFT,
             };
-            mp_binary_op_t op = token_to_op[tok - MP_TOKEN_OP_PLUS];
+            mp_binary_op_t op = (mp_binary_op_t)(token_to_op[tok - MP_TOKEN_OP_PLUS]);
             if (op == (mp_binary_op_t)255) {
                 return false;
             }
@@ -681,7 +681,7 @@ STATIC bool fold_constants(parser_t *parser, uint8_t rule_id, size_t num_args) {
         if (!mp_parse_node_get_int_maybe(pn, &arg0)) {
             return false;
         }
-        mp_token_kind_t tok = MP_PARSE_NODE_LEAF_ARG(peek_result(parser, 1));
+        mp_token_kind_t tok = (mp_token_kind_t)MP_PARSE_NODE_LEAF_ARG(peek_result(parser, 1));
         mp_unary_op_t op;
         if (tok == MP_TOKEN_OP_PLUS) {
             op = MP_UNARY_OP_POSITIVE;
@@ -820,7 +820,7 @@ STATIC void push_result_rule(parser_t *parser, size_t src_line, uint8_t rule_id,
     }
     #endif
 
-    mp_parse_node_struct_t *pn = parser_alloc(parser, sizeof(mp_parse_node_struct_t) + sizeof(mp_parse_node_t) * num_args);
+    mp_parse_node_struct_t *pn = (mp_parse_node_struct_t*)parser_alloc(parser, sizeof(mp_parse_node_struct_t) + sizeof(mp_parse_node_t) * num_args);
     pn->source_line = src_line;
     pn->kind_num_nodes = (rule_id & 0xff) | (num_args << 8);
     for (size_t i = num_args; i > 0; i--) {
@@ -939,7 +939,7 @@ mp_parse_tree_t mp_parse(mp_lexer_t *lex, mp_parse_input_kind_t input_kind) {
                 for (; i < n; ++i) {
                     if ((rule_arg[i] & RULE_ARG_KIND_MASK) == RULE_ARG_TOK) {
                         // need to match a token
-                        mp_token_kind_t tok_kind = rule_arg[i] & RULE_ARG_ARG_MASK;
+                        mp_token_kind_t tok_kind = (mp_token_kind_t)(rule_arg[i] & RULE_ARG_ARG_MASK);
                         if (lex->tok_kind == tok_kind) {
                             // matched token
                             if (tok_kind == MP_TOKEN_NAME) {
@@ -991,7 +991,7 @@ mp_parse_tree_t mp_parse(mp_lexer_t *lex, mp_parse_input_kind_t input_kind) {
                 for (size_t x = n; x > 0;) {
                     --x;
                     if ((rule_arg[x] & RULE_ARG_KIND_MASK) == RULE_ARG_TOK) {
-                        mp_token_kind_t tok_kind = rule_arg[x] & RULE_ARG_ARG_MASK;
+                        mp_token_kind_t tok_kind = (mp_token_kind_t)(rule_arg[x] & RULE_ARG_ARG_MASK);
                         if (tok_kind == MP_TOKEN_NAME) {
                             // only tokens which were names are pushed to stack
                             i += 1;
