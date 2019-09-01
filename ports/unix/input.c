@@ -52,7 +52,7 @@ char *prompt(char *p) {
     } else {
         l++;
     }
-    char *line = malloc(l);
+    char *line = (char*)malloc(l);
     memcpy(line, buf, l);
     return line;
 }

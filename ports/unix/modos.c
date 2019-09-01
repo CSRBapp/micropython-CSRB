@@ -51,7 +51,7 @@ STATIC mp_obj_t mod_os_stat(mp_obj_t path_in) {
     int res = stat(path, &sb);
     RAISE_ERRNO(res, errno);
 
-    mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
+    mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
     t->items[0] = MP_OBJ_NEW_SMALL_INT(sb.st_mode);
     t->items[1] = MP_OBJ_NEW_SMALL_INT(sb.st_ino);
     t->items[2] = MP_OBJ_NEW_SMALL_INT(sb.st_dev);
@@ -163,7 +163,7 @@ typedef struct _mp_obj_listdir_t {
 } mp_obj_listdir_t;
 
 STATIC mp_obj_t listdir_next(mp_obj_t self_in) {
-    mp_obj_listdir_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_listdir_t *self = (mp_obj_listdir_t*)MP_OBJ_TO_PTR(self_in);
 
     if (self->dir == NULL) {
         goto done;
@@ -176,7 +176,7 @@ STATIC mp_obj_t listdir_next(mp_obj_t self_in) {
         return MP_OBJ_STOP_ITERATION;
     }
 
-    mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(3, NULL));
+    mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(mp_obj_new_tuple(3, NULL));
     t->items[0] = mp_obj_new_str(dirent->d_name, strlen(dirent->d_name));
 
     #ifdef _DIRENT_HAVE_D_TYPE

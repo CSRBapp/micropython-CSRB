@@ -124,7 +124,7 @@ STATIC mp_obj_t uctypes_struct_make_new(const mp_obj_type_t *type, size_t n_args
     mp_arg_check_num(n_args, n_kw, 2, 3, false);
     mp_obj_uctypes_struct_t *o = m_new_obj(mp_obj_uctypes_struct_t);
     o->base.type = type;
-    o->addr = (void*)(uintptr_t)mp_obj_int_get_truncated(args[0]);
+    o->addr = (byte*)mp_obj_int_get_truncated(args[0]);
     o->desc = args[1];
     o->flags = LAYOUT_NATIVE;
     if (n_args == 3) {
@@ -135,7 +135,7 @@ STATIC mp_obj_t uctypes_struct_make_new(const mp_obj_type_t *type, size_t n_args
 
 STATIC void uctypes_struct_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     (void)kind;
-    mp_obj_uctypes_struct_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_uctypes_struct_t *self = (mp_obj_uctypes_struct_t*)MP_OBJ_TO_PTR(self_in);
     const char *typen = "unk";
     if (mp_obj_is_type(self->desc, &mp_type_dict)
       #if MICROPY_PY_COLLECTIONS_ORDEREDDICT
@@ -144,7 +144,7 @@ STATIC void uctypes_struct_print(const mp_print_t *print, mp_obj_t self_in, mp_p
       ) {
         typen = "STRUCT";
     } else if (mp_obj_is_type(self->desc, &mp_type_tuple)) {
-        mp_obj_tuple_t *t = MP_OBJ_TO_PTR(self->desc);
+        mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(self->desc);
         mp_int_t offset = MP_OBJ_SMALL_INT_VALUE(t->items[0]);
         uint agg_type = GET_TYPE(offset, AGG_TYPE_BITS);
         switch (agg_type) {
@@ -227,7 +227,7 @@ STATIC mp_uint_t uctypes_struct_size(mp_obj_t desc_in, int layout_type, mp_uint_
         syntax_error();
     }
 
-    mp_obj_dict_t *d = MP_OBJ_TO_PTR(desc_in);
+    mp_obj_dict_t *d = (mp_obj_dict_t*)MP_OBJ_TO_PTR(desc_in);
     mp_uint_t total_size = 0;
 
     for (mp_uint_t i = 0; i < d->map.alloc; i++) {
@@ -251,7 +251,7 @@ STATIC mp_uint_t uctypes_struct_size(mp_obj_t desc_in, int layout_type, mp_uint_
                 if (!mp_obj_is_type(v, &mp_type_tuple)) {
                     syntax_error();
                 }
-                mp_obj_tuple_t *t = MP_OBJ_TO_PTR(v);
+                mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(v);
                 mp_int_t offset = MP_OBJ_SMALL_INT_VALUE(t->items[0]);
                 offset &= VALUE_MASK(AGG_TYPE_BITS);
                 mp_uint_t s = uctypes_struct_agg_size(t, layout_type, max_field_size);
@@ -283,7 +283,7 @@ STATIC mp_obj_t uctypes_struct_sizeof(size_t n_args, const mp_obj_t *args) {
             mp_raise_TypeError(NULL);
         }
         // Extract structure definition
-        mp_obj_uctypes_struct_t *obj = MP_OBJ_TO_PTR(obj_in);
+        mp_obj_uctypes_struct_t *obj = (mp_obj_uctypes_struct_t*)MP_OBJ_TO_PTR(obj_in);
         obj_in = obj->desc;
         layout_type = obj->flags;
     } else {
@@ -395,7 +395,7 @@ STATIC void set_aligned(uint val_type, void *p, mp_int_t index, mp_obj_t val) {
                 ((uint64_t*)p)[index] = (uint64_t)v;
             } else {
                 // TODO: Doesn't offer atomic store semantics, but should at least try
-                set_unaligned(val_type, p, MP_ENDIANNESS_BIG, val);
+                set_unaligned(val_type, (byte*)p, MP_ENDIANNESS_BIG, val);
             }
             return;
         default:
@@ -404,7 +404,7 @@ STATIC void set_aligned(uint val_type, void *p, mp_int_t index, mp_obj_t val) {
 }
 
 STATIC mp_obj_t uctypes_struct_attr_op(mp_obj_t self_in, qstr attr, mp_obj_t set_val) {
-    mp_obj_uctypes_struct_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_uctypes_struct_t *self = (mp_obj_uctypes_struct_t*)MP_OBJ_TO_PTR(self_in);
 
     if (!mp_obj_is_type(self->desc, &mp_type_dict)
       #if MICROPY_PY_COLLECTIONS_ORDEREDDICT
@@ -485,7 +485,7 @@ STATIC mp_obj_t uctypes_struct_attr_op(mp_obj_t self_in, qstr attr, mp_obj_t set
         syntax_error();
     }
 
-    mp_obj_tuple_t *sub = MP_OBJ_TO_PTR(deref);
+    mp_obj_tuple_t *sub = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(deref);
     mp_int_t offset = MP_OBJ_SMALL_INT_VALUE(sub->items[0]);
     mp_uint_t agg_type = GET_TYPE(offset, AGG_TYPE_BITS);
     offset &= VALUE_MASK(AGG_TYPE_BITS);
@@ -536,7 +536,7 @@ STATIC void uctypes_struct_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
 }
 
 STATIC mp_obj_t uctypes_struct_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_obj_t value) {
-    mp_obj_uctypes_struct_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_uctypes_struct_t *self = (mp_obj_uctypes_struct_t*)MP_OBJ_TO_PTR(self_in);
 
     if (value == MP_OBJ_NULL) {
         // delete
@@ -547,7 +547,7 @@ STATIC mp_obj_t uctypes_struct_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_ob
             mp_raise_TypeError("struct: cannot index");
         }
 
-        mp_obj_tuple_t *t = MP_OBJ_TO_PTR(self->desc);
+        mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(self->desc);
         mp_int_t offset = MP_OBJ_SMALL_INT_VALUE(t->items[0]);
         uint agg_type = GET_TYPE(offset, AGG_TYPE_BITS);
 
@@ -593,7 +593,7 @@ STATIC mp_obj_t uctypes_struct_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_ob
             }
 
         } else if (agg_type == PTR) {
-            byte *p = *(void**)self->addr;
+            byte *p = (byte*) *(void**)self->addr;
             if (mp_obj_is_small_int(t->items[1])) {
                 uint val_type = GET_TYPE(MP_OBJ_SMALL_INT_VALUE(t->items[1]), VAL_TYPE_BITS);
                 return get_aligned(val_type, p, index);
@@ -615,15 +615,15 @@ STATIC mp_obj_t uctypes_struct_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_ob
 }
 
 STATIC mp_obj_t uctypes_struct_unary_op(mp_unary_op_t op, mp_obj_t self_in) {
-    mp_obj_uctypes_struct_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_uctypes_struct_t *self = (mp_obj_uctypes_struct_t*)MP_OBJ_TO_PTR(self_in);
     switch (op) {
         case MP_UNARY_OP_INT:
             if (mp_obj_is_type(self->desc, &mp_type_tuple)) {
-                mp_obj_tuple_t *t = MP_OBJ_TO_PTR(self->desc);
+                mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(self->desc);
                 mp_int_t offset = MP_OBJ_SMALL_INT_VALUE(t->items[0]);
                 uint agg_type = GET_TYPE(offset, AGG_TYPE_BITS);
                 if (agg_type == PTR) {
-                    byte *p = *(void**)self->addr;
+                    byte *p = (byte*) *(void**)self->addr;
                     return mp_obj_new_int((mp_int_t)(uintptr_t)p);
                 }
             }
@@ -635,7 +635,7 @@ STATIC mp_obj_t uctypes_struct_unary_op(mp_unary_op_t op, mp_obj_t self_in) {
 
 STATIC mp_int_t uctypes_get_buffer(mp_obj_t self_in, mp_buffer_info_t *bufinfo, mp_uint_t flags) {
     (void)flags;
-    mp_obj_uctypes_struct_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_uctypes_struct_t *self = (mp_obj_uctypes_struct_t*)MP_OBJ_TO_PTR(self_in);
     mp_uint_t max_field_size = 0;
     mp_uint_t size = uctypes_struct_size(self->desc, self->flags, &max_field_size);
 
@@ -669,7 +669,7 @@ MP_DEFINE_CONST_FUN_OBJ_2(uctypes_struct_bytearray_at_obj, uctypes_struct_bytear
 /// captured by value, i.e. copied. Use bytearray_at() to capture by reference
 /// ("zero copy").
 STATIC mp_obj_t uctypes_struct_bytes_at(mp_obj_t ptr, mp_obj_t size) {
-    return mp_obj_new_bytes((void*)(uintptr_t)mp_obj_int_get_truncated(ptr), mp_obj_int_get_truncated(size));
+    return mp_obj_new_bytes((const byte*)(uintptr_t)mp_obj_int_get_truncated(ptr), mp_obj_int_get_truncated(size));
 }
 MP_DEFINE_CONST_FUN_OBJ_2(uctypes_struct_bytes_at_obj, uctypes_struct_bytes_at);
 

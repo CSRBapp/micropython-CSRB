@@ -319,7 +319,7 @@ mp_obj_t mp_builtin___import__(size_t n_args, const mp_obj_t *args) {
         }
 
         uint new_mod_l = (mod_len == 0 ? (size_t)(p - this_name) : (size_t)(p - this_name) + 1 + mod_len);
-        char *new_mod = mp_local_alloc(new_mod_l);
+        char *new_mod = (char*)mp_local_alloc(new_mod_l);
         memcpy(new_mod, this_name, p - this_name);
         if (mod_len != 0) {
             new_mod[p - this_name] = '.';
@@ -340,7 +340,7 @@ mp_obj_t mp_builtin___import__(size_t n_args, const mp_obj_t *args) {
     if (module_obj != MP_OBJ_NULL) {
         DEBUG_printf("Module already loaded\n");
         // If it's not a package, return module right away
-        char *p = strchr(mod_str, '.');
+        char *p = (char*)strchr(mod_str, '.');
         if (p == NULL) {
             return module_obj;
         }
@@ -423,7 +423,7 @@ mp_obj_t mp_builtin___import__(size_t n_args, const mp_obj_t *args) {
                 // touch package name itself, which is important for future
                 // imports).
                 if (i == mod_len && fromtuple == mp_const_false && stat != MP_IMPORT_STAT_DIR) {
-                    mp_obj_module_t *o = MP_OBJ_TO_PTR(module_obj);
+                    mp_obj_module_t *o = (mp_obj_module_t*)MP_OBJ_TO_PTR(module_obj);
                     mp_obj_dict_store(MP_OBJ_FROM_PTR(o->globals), MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR___main__));
                     #if MICROPY_CPYTHON_COMPAT
                     // Store module as "__main__" in the dictionary of loaded modules (returned by sys.modules).

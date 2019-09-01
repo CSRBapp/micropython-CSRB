@@ -118,15 +118,15 @@ STATIC mp_obj_t uhashlib_sha256_make_new(const mp_obj_type_t *type, size_t n_arg
 }
 
 STATIC mp_obj_t uhashlib_sha256_update(mp_obj_t self_in, mp_obj_t arg) {
-    mp_obj_hash_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_hash_t *self = (mp_obj_hash_t*)MP_OBJ_TO_PTR(self_in);
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(arg, &bufinfo, MP_BUFFER_READ);
-    sha256_update((CRYAL_SHA256_CTX*)self->state, bufinfo.buf, bufinfo.len);
+    sha256_update((CRYAL_SHA256_CTX*)self->state, (const BYTE*)bufinfo.buf, bufinfo.len);
     return mp_const_none;
 }
 
 STATIC mp_obj_t uhashlib_sha256_digest(mp_obj_t self_in) {
-    mp_obj_hash_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_hash_t *self = (mp_obj_hash_t*)MP_OBJ_TO_PTR(self_in);
     vstr_t vstr;
     vstr_init_len(&vstr, SHA256_BLOCK_SIZE);
     sha256_final((CRYAL_SHA256_CTX*)self->state, (byte*)vstr.buf);
@@ -148,7 +148,7 @@ STATIC const mp_obj_type_t uhashlib_sha256_type = {
     { &mp_type_type },
     .name = MP_QSTR_sha256,
     .make_new = uhashlib_sha256_make_new,
-    .locals_dict = (void*)&uhashlib_sha256_locals_dict,
+    .locals_dict = (mp_obj_dict_t*)&uhashlib_sha256_locals_dict,
 };
 #endif
 

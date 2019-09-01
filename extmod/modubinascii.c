@@ -53,7 +53,7 @@ mp_obj_t mod_binascii_hexlify(size_t n_args, const mp_obj_t *args) {
         sep = mp_obj_str_get_str(args[1]);
     }
     vstr_init_len(&vstr, out_len);
-    byte *in = bufinfo.buf, *out = (byte*)vstr.buf;
+    byte *in = (byte*)bufinfo.buf, *out = (byte*)vstr.buf;
     for (mp_uint_t i = bufinfo.len; i--;) {
         byte d = (*in >> 4);
         if (d > 9) {
@@ -82,7 +82,7 @@ mp_obj_t mod_binascii_unhexlify(mp_obj_t data) {
     }
     vstr_t vstr;
     vstr_init_len(&vstr, bufinfo.len / 2);
-    byte *in = bufinfo.buf, *out = (byte*)vstr.buf;
+    byte *in = (byte*)bufinfo.buf, *out = (byte*)vstr.buf;
     byte hex_byte = 0;
     for (mp_uint_t i = bufinfo.len; i--;) {
         byte hex_ch = *in++;
@@ -124,7 +124,7 @@ static int mod_binascii_sextet(byte ch) {
 mp_obj_t mod_binascii_a2b_base64(mp_obj_t data) {
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(data, &bufinfo, MP_BUFFER_READ);
-    byte *in = bufinfo.buf;
+    byte *in = (byte*)bufinfo.buf;
 
     vstr_t vstr;
     vstr_init(&vstr, (bufinfo.len / 4) * 3 + 1); // Potentially over-allocate
@@ -172,7 +172,7 @@ mp_obj_t mod_binascii_b2a_base64(mp_obj_t data) {
     vstr_init_len(&vstr, ((bufinfo.len != 0) ? (((bufinfo.len - 1) / 3) + 1) * 4 : 0) + 1);
 
     // First pass, we convert input buffer to numeric base 64 values
-    byte *in = bufinfo.buf, *out = (byte*)vstr.buf;
+    byte *in = (byte*)bufinfo.buf, *out = (byte*)vstr.buf;
     mp_uint_t i;
     for (i = bufinfo.len; i >= 3; i -= 3) {
         *out++ = (in[0] & 0xFC) >> 2;

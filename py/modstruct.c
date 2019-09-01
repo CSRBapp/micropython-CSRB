@@ -127,10 +127,10 @@ STATIC mp_obj_t struct_unpack_from(size_t n_args, const mp_obj_t *args) {
     size_t total_sz;
     size_t num_items = calc_size_items(fmt, &total_sz);
     char fmt_type = get_fmt_type(&fmt);
-    mp_obj_tuple_t *res = MP_OBJ_TO_PTR(mp_obj_new_tuple(num_items, NULL));
+    mp_obj_tuple_t *res = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(mp_obj_new_tuple(num_items, NULL));
     mp_buffer_info_t bufinfo;
     mp_get_buffer_raise(args[1], &bufinfo, MP_BUFFER_READ);
-    byte *p = bufinfo.buf;
+    byte *p = (byte*)bufinfo.buf;
     byte *end_p = &p[bufinfo.len];
     mp_int_t offset = 0;
 

@@ -543,7 +543,7 @@ void uzlib_uncompress_init(TINF_DATA *d, void *dict, unsigned int dictLen)
    d->bfinal = 0;
    d->btype = -1;
    d->dict_size = dictLen;
-   d->dict_ring = dict;
+   d->dict_ring = (unsigned char*)dict;
    d->dict_idx = 0;
    d->curlen = 0;
 }

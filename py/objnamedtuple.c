@@ -62,7 +62,7 @@ MP_DEFINE_CONST_FUN_OBJ_1(namedtuple_asdict_obj, namedtuple_asdict);
 
 STATIC void namedtuple_print(const mp_print_t *print, mp_obj_t o_in, mp_print_kind_t kind) {
     (void)kind;
-    mp_obj_namedtuple_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_namedtuple_t *o = (mp_obj_namedtuple_t*)MP_OBJ_TO_PTR(o_in);
     mp_printf(print, "%q", o->tuple.base.type->name);
     const qstr *fields = ((mp_obj_namedtuple_type_t*)o->tuple.base.type)->fields;
     mp_obj_attrtuple_print_helper(print, fields, &o->tuple);
@@ -71,7 +71,7 @@ STATIC void namedtuple_print(const mp_print_t *print, mp_obj_t o_in, mp_print_ki
 STATIC void namedtuple_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     if (dest[0] == MP_OBJ_NULL) {
         // load attribute
-        mp_obj_namedtuple_t *self = MP_OBJ_TO_PTR(self_in);
+        mp_obj_namedtuple_t *self = (mp_obj_namedtuple_t*)MP_OBJ_TO_PTR(self_in);
         #if MICROPY_PY_COLLECTIONS_NAMEDTUPLE__ASDICT
         if (attr == MP_QSTR__asdict) {
             dest[0] = MP_OBJ_FROM_PTR(&namedtuple_asdict_obj);
@@ -109,7 +109,7 @@ STATIC mp_obj_t namedtuple_make_new(const mp_obj_type_t *type_in, size_t n_args,
     }
 
     // Create a tuple and set the type to this namedtuple
-    mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(num_fields, NULL));
+    mp_obj_tuple_t *tuple = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(mp_obj_new_tuple(num_fields, NULL));
     tuple->base.type = type_in;
 
     // Copy the positional args into the first slots of the namedtuple

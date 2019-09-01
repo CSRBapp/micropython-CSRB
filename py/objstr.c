@@ -173,7 +173,7 @@ mp_obj_t mp_obj_str_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_
                     return MP_OBJ_NEW_QSTR(q);
                 }
 
-                mp_obj_str_t *o = MP_OBJ_TO_PTR(mp_obj_new_str_copy(type, NULL, str_len));
+                mp_obj_str_t *o = (mp_obj_str_t*)MP_OBJ_TO_PTR(mp_obj_new_str_copy(type, NULL, str_len));
                 o->data = str_data;
                 o->hash = str_hash;
                 return MP_OBJ_FROM_PTR(o);
@@ -185,7 +185,7 @@ mp_obj_t mp_obj_str_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_
                     mp_raise_msg(&mp_type_UnicodeError, NULL);
                 }
                 #endif
-                return mp_obj_new_str(bufinfo.buf, bufinfo.len);
+                return mp_obj_new_str((const char*)bufinfo.buf, bufinfo.len);
             }
     }
 }
@@ -214,7 +214,7 @@ STATIC mp_obj_t bytes_make_new(const mp_obj_type_t *type_in, size_t n_args, size
         if (str_hash == 0) {
             str_hash = qstr_compute_hash(str_data, str_len);
         }
-        mp_obj_str_t *o = MP_OBJ_TO_PTR(mp_obj_new_str_copy(&mp_type_bytes, NULL, str_len));
+        mp_obj_str_t *o = (mp_obj_str_t*)MP_OBJ_TO_PTR(mp_obj_new_str_copy(&mp_type_bytes, NULL, str_len));
         o->data = str_data;
         o->hash = str_hash;
         return MP_OBJ_FROM_PTR(o);
@@ -238,7 +238,7 @@ STATIC mp_obj_t bytes_make_new(const mp_obj_type_t *type_in, size_t n_args, size
     // check if argument has the buffer protocol
     mp_buffer_info_t bufinfo;
     if (mp_get_buffer(args[0], &bufinfo, MP_BUFFER_READ)) {
-        return mp_obj_new_bytes(bufinfo.buf, bufinfo.len);
+        return mp_obj_new_bytes((const byte*)bufinfo.buf, bufinfo.len);
     }
 
     vstr_t vstr;
@@ -368,7 +368,7 @@ mp_obj_t mp_obj_str_binary_op(mp_binary_op_t op, mp_obj_t lhs_in, mp_obj_t rhs_i
         if (!mp_get_buffer(rhs_in, &bufinfo, MP_BUFFER_READ)) {
             return MP_OBJ_NULL; // op not supported
         }
-        rhs_data = bufinfo.buf;
+        rhs_data = (const byte*)bufinfo.buf;
         rhs_len = bufinfo.len;
     } else {
         // LHS is str and RHS has an incompatible type
@@ -638,7 +638,7 @@ STATIC mp_obj_t str_rsplit(size_t n_args, const mp_obj_t *args) {
     mp_int_t org_splits = splits;
     // Preallocate list to the max expected # of elements, as we
     // will fill it from the end.
-    mp_obj_list_t *res = MP_OBJ_TO_PTR(mp_obj_new_list(splits + 1, NULL));
+    mp_obj_list_t *res = (mp_obj_list_t*)MP_OBJ_TO_PTR(mp_obj_new_list(splits + 1, NULL));
     mp_int_t idx = splits;
 
     if (sep == mp_const_none) {
@@ -2127,7 +2127,7 @@ qstr mp_obj_str_get_qstr(mp_obj_t self_in) {
     if (mp_obj_is_qstr(self_in)) {
         return MP_OBJ_QSTR_VALUE(self_in);
     } else if (mp_obj_is_type(self_in, &mp_type_str)) {
-        mp_obj_str_t *self = MP_OBJ_TO_PTR(self_in);
+        mp_obj_str_t *self = (mp_obj_str_t*)MP_OBJ_TO_PTR(self_in);
         return qstr_from_strn((char*)self->data, self->len);
     } else {
         bad_implicit_conversion(self_in);
@@ -2179,7 +2179,7 @@ typedef struct _mp_obj_str8_it_t {
 
 #if !MICROPY_PY_BUILTINS_STR_UNICODE
 STATIC mp_obj_t str_it_iternext(mp_obj_t self_in) {
-    mp_obj_str8_it_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_str8_it_t *self = (mp_obj_str8_it_t*)MP_OBJ_TO_PTR(self_in);
     GET_STR_DATA_LEN(self->str, str, len);
     if (self->cur < len) {
         mp_obj_t o_out = mp_obj_new_str_via_qstr((const char*)str + self->cur, 1);
@@ -2202,7 +2202,7 @@ STATIC mp_obj_t mp_obj_new_str_iterator(mp_obj_t str, mp_obj_iter_buf_t *iter_bu
 #endif
 
 STATIC mp_obj_t bytes_it_iternext(mp_obj_t self_in) {
-    mp_obj_str8_it_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_str8_it_t *self = (mp_obj_str8_it_t*)MP_OBJ_TO_PTR(self_in);
     GET_STR_DATA_LEN(self->str, str, len);
     if (self->cur < len) {
         mp_obj_t o_out = MP_OBJ_NEW_SMALL_INT(str[self->cur]);
