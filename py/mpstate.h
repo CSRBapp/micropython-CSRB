@@ -262,7 +262,7 @@ typedef struct _mp_state_ctx_t {
     mp_state_mem_t mem;
 } mp_state_ctx_t;
 
-#include <threads.h>
+#include <thread>
 extern thread_local mp_state_ctx_t mp_state_ctx;
 
 #define MP_STATE_VM(x) (mp_state_ctx.vm.x)

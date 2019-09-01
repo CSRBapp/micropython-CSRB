@@ -121,7 +121,7 @@ struct _nlr_buf_t {
 unsigned int nlr_push(nlr_buf_t *);
 #endif
 
-unsigned int nlr_push_tail(nlr_buf_t *top);
+extern "C" unsigned int nlr_push_tail(nlr_buf_t *top);
 void nlr_pop(void);
 NORETURN void nlr_jump(void *val);
 

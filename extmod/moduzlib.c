@@ -189,10 +189,12 @@ STATIC mp_obj_t mod_uzlib_decompress(size_t n_args, const mp_obj_t *args) {
         decomp->dest_limit = decomp->dest + 256;
     }
 
-    mp_uint_t final_sz = decomp->dest - dest_buf;
+    mp_uint_t final_sz;
+    final_sz = decomp->dest - dest_buf;
     DEBUG_printf("uzlib: Resizing from " UINT_FMT " to final size: " UINT_FMT " bytes\n", dest_buf_size, final_sz);
     dest_buf = (byte*)m_renew(byte, dest_buf, dest_buf_size, final_sz);
-    mp_obj_t res = mp_obj_new_bytearray_by_ref(final_sz, dest_buf);
+    mp_obj_t res;
+    res = mp_obj_new_bytearray_by_ref(final_sz, dest_buf);
     m_del_obj(TINF_DATA, decomp);
     return res;
 

@@ -49,12 +49,13 @@
 // Exception stack also grows up, top element is also pointed at.
 
 #define DECODE_UINT \
-    mp_uint_t unum = 0; \
+    mp_uint_t unum; \
+    unum = 0; \
     do { \
         unum = (unum << 7) + (*ip & 0x7f); \
     } while ((*ip++ & 0x80) != 0)
-#define DECODE_ULABEL size_t ulab = (ip[0] | (ip[1] << 8)); ip += 2
-#define DECODE_SLABEL size_t slab = (ip[0] | (ip[1] << 8)) - 0x8000; ip += 2
+#define DECODE_ULABEL size_t ulab; ulab = (ip[0] | (ip[1] << 8)); ip += 2
+#define DECODE_SLABEL size_t slab; slab = (ip[0] | (ip[1] << 8)) - 0x8000; ip += 2
 
 #if MICROPY_PERSISTENT_CODE
 

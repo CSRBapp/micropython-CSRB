@@ -1336,7 +1336,8 @@ STATIC void compile_if_stmt(compiler_t *comp, mp_parse_node_struct_t *pns) {
 
     // compile elif blocks (if any)
     mp_parse_node_t *pn_elif;
-    int n_elif = mp_parse_node_extract_list(&pns->nodes[2], PN_if_stmt_elif_list, &pn_elif);
+    int n_elif;
+    n_elif = mp_parse_node_extract_list(&pns->nodes[2], PN_if_stmt_elif_list, &pn_elif);
     for (int i = 0; i < n_elif; i++) {
         assert(MP_PARSE_NODE_IS_STRUCT_KIND(pn_elif[i], PN_if_stmt_elif)); // should be
         mp_parse_node_struct_t *pns_elif = (mp_parse_node_struct_t*)pn_elif[i];
@@ -1987,8 +1988,10 @@ STATIC void compile_expr_stmt(compiler_t *comp, mp_parse_node_struct_t *pns) {
             }
         }
     } else if (MP_PARSE_NODE_IS_STRUCT(pns->nodes[1])) {
-        mp_parse_node_struct_t *pns1 = (mp_parse_node_struct_t*)pns->nodes[1];
-        int kind = MP_PARSE_NODE_STRUCT_KIND(pns1);
+        mp_parse_node_struct_t *pns1;
+        pns1 = (mp_parse_node_struct_t*)pns->nodes[1];
+        int kind;
+        kind = MP_PARSE_NODE_STRUCT_KIND(pns1);
         if (kind == PN_expr_stmt_augassign) {
             c_assign(comp, pns->nodes[0], ASSIGN_AUG_LOAD); // lhs load for aug assign
             compile_node(comp, pns1->nodes[1]); // rhs
