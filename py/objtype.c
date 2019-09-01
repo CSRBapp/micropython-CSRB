@@ -99,11 +99,11 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(native_base_init_wrapper_obj, 1, MP_O
 #if !MICROPY_CPYTHON_COMPAT
 STATIC
 #endif
-mp_obj_instance_t *mp_obj_new_instance(const mp_obj_type_t *class, const mp_obj_type_t **native_base) {
-    size_t num_native_bases = instance_count_native_bases(class, native_base);
+mp_obj_instance_t *mp_obj_new_instance(const mp_obj_type_t *mp_class, const mp_obj_type_t **native_base) {
+    size_t num_native_bases = instance_count_native_bases(mp_class, native_base);
     assert(num_native_bases < 2);
     mp_obj_instance_t *o = m_new_obj_var(mp_obj_instance_t, mp_obj_t, num_native_bases);
-    o->base.type = class;
+    o->base.type = mp_class;
     mp_map_init(&o->members, 0);
     // Initialise the native base-class slot (should be 1 at most) with a valid
     // object.  It doesn't matter which object, so long as it can be uniquely

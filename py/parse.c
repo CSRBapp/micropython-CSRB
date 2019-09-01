@@ -77,13 +77,13 @@ enum {
 
 // Define an array of actions corresponding to each rule
 STATIC const uint8_t rule_act_table[] = {
-#define or(n)                   (RULE_ACT_OR | n)
-#define and(n)                  (RULE_ACT_AND | n)
-#define and_ident(n)            (RULE_ACT_AND | n | RULE_ACT_ALLOW_IDENT)
-#define and_blank(n)            (RULE_ACT_AND | n | RULE_ACT_ADD_BLANK)
-#define one_or_more             (RULE_ACT_LIST | 2)
-#define list                    (RULE_ACT_LIST | 1)
-#define list_with_end           (RULE_ACT_LIST | 3)
+#define mp_or(n)                   (RULE_ACT_OR | n)
+#define mp_and(n)                  (RULE_ACT_AND | n)
+#define mp_and_ident(n)            (RULE_ACT_AND | n | RULE_ACT_ALLOW_IDENT)
+#define mp_and_blank(n)            (RULE_ACT_AND | n | RULE_ACT_ADD_BLANK)
+#define mp_one_or_more             (RULE_ACT_LIST | 2)
+#define mp_list                    (RULE_ACT_LIST | 1)
+#define mp_list_with_end           (RULE_ACT_LIST | 3)
 
 #define DEF_RULE(rule, comp, kind, ...) kind,
 #define DEF_RULE_NC(rule, kind, ...)
@@ -99,13 +99,13 @@ STATIC const uint8_t rule_act_table[] = {
 #undef DEF_RULE
 #undef DEF_RULE_NC
 
-#undef or
-#undef and
-#undef and_ident
-#undef and_blank
-#undef one_or_more
-#undef list
-#undef list_with_end
+#undef mp_or
+#undef mp_and
+#undef mp_and_ident
+#undef mp_and_blank
+#undef mp_one_or_more
+#undef mp_list
+#undef mp_list_with_end
 };
 
 // Define the argument data for each rule, as a combined array
