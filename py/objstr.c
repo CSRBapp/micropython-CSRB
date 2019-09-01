@@ -1629,8 +1629,8 @@ STATIC mp_obj_t str_replace(size_t n_args, const mp_obj_t *args) {
     // extract string data
 
     GET_STR_DATA_LEN(args[0], str, str_len);
-    GET_STR_DATA_LEN(args[1], old, old_len);
-    GET_STR_DATA_LEN(args[2], new, new_len);
+    GET_STR_DATA_LEN(args[1], str_old, old_len);
+    GET_STR_DATA_LEN(args[2], str_new, new_len);
 
     // old won't exist in str if it's longer, so nothing to replace
     if (old_len > str_len) {
@@ -1654,12 +1654,12 @@ STATIC mp_obj_t str_replace(size_t n_args, const mp_obj_t *args) {
             // if old_str is empty, copy new_str to start of replaced string
             // copy the replacement string
             if (data != NULL) {
-                memcpy(data, new, new_len);
+                memcpy(data, str_new, new_len);
             }
             replaced_str_index += new_len;
             num_replacements_done++;
         }
-        while (num_replacements_done != (size_t)max_rep && str_len_remain > 0 && (old_occurrence = find_subbytes(offset_ptr, str_len_remain, old, old_len, 1)) != NULL) {
+        while (num_replacements_done != (size_t)max_rep && str_len_remain > 0 && (old_occurrence = find_subbytes(offset_ptr, str_len_remain, str_old, old_len, 1)) != NULL) {
             if (old_len == 0) {
                 old_occurrence += 1;
             }
@@ -1670,7 +1670,7 @@ STATIC mp_obj_t str_replace(size_t n_args, const mp_obj_t *args) {
             replaced_str_index += old_occurrence - offset_ptr;
             // copy the replacement string
             if (data != NULL) {
-                memcpy(data + replaced_str_index, new, new_len);
+                memcpy(data + replaced_str_index, str_new, new_len);
             }
             replaced_str_index += new_len;
             offset_ptr = old_occurrence + old_len;
