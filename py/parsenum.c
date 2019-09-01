@@ -46,9 +46,9 @@ STATIC NORETURN void raise_exc(mp_obj_t exc, mp_lexer_t *lex) {
     nlr_raise(exc);
 }
 
-mp_obj_t mp_parse_num_integer(const char *restrict str_, size_t len, int base, mp_lexer_t *lex) {
-    const byte *restrict str = (const byte *)str_;
-    const byte *restrict top = str + len;
+mp_obj_t mp_parse_num_integer(const char *__restrict__ str_, size_t len, int base, mp_lexer_t *lex) {
+    const byte *__restrict__ str = (const byte *)str_;
+    const byte *__restrict__ top = str + len;
     bool neg = false;
     mp_obj_t ret_val;
 
@@ -77,7 +77,7 @@ mp_obj_t mp_parse_num_integer(const char *restrict str_, size_t len, int base, m
 
     // string should be an integer number
     mp_int_t int_val = 0;
-    const byte *restrict str_val_start = str;
+    const byte *__restrict__ str_val_start = str;
     for (; str < top; str++) {
         // get next digit as a value
         mp_uint_t dig = *str;

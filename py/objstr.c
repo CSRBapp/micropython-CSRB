@@ -243,7 +243,8 @@ STATIC mp_obj_t bytes_make_new(const mp_obj_type_t *type_in, size_t n_args, size
 
     vstr_t vstr;
     // Try to create array of exact len if initializer len is known
-    mp_obj_t len_in = mp_obj_len_maybe(args[0]);
+    mp_obj_t len_in;
+    len_in = mp_obj_len_maybe(args[0]);
     if (len_in == MP_OBJ_NULL) {
         vstr_init(&vstr, 16);
     } else {
@@ -252,7 +253,8 @@ STATIC mp_obj_t bytes_make_new(const mp_obj_type_t *type_in, size_t n_args, size
     }
 
     mp_obj_iter_buf_t iter_buf;
-    mp_obj_t iterable = mp_getiter(args[0], &iter_buf);
+    mp_obj_t iterable;
+    iterable = mp_getiter(args[0], &iter_buf);
     mp_obj_t item;
     while ((item = mp_iternext(iterable)) != MP_OBJ_STOP_ITERATION) {
         mp_int_t val = mp_obj_get_int(item);
@@ -709,7 +711,8 @@ STATIC mp_obj_t str_finder(size_t n_args, const mp_obj_t *args, int direction, b
         goto out_error;
     }
 
-    const byte *p = find_subbytes(start, end - start, needle, needle_len, direction);
+    const byte *p;
+    p = find_subbytes(start, end - start, needle, needle_len, direction);
     if (p == NULL) {
     out_error:
         // not found
@@ -1439,9 +1442,12 @@ STATIC mp_obj_t str_modulo_format(mp_obj_t pattern, size_t n_args, const mp_obj_
             str++;
         }
 
-        int flags = 0;
-        char fill = ' ';
-        int alt = 0;
+        int flags;
+        flags = 0;
+        char fill;
+        fill = ' ';
+        int alt;
+        alt = 0;
         while (str < top) {
             if (*str == '-')      flags |= PF_FLAG_LEFT_ADJUST;
             else if (*str == '+') flags |= PF_FLAG_SHOW_SIGN;
@@ -1454,7 +1460,8 @@ STATIC mp_obj_t str_modulo_format(mp_obj_t pattern, size_t n_args, const mp_obj_
             str++;
         }
         // parse width, if it exists
-        int width = 0;
+        int width;
+        width = 0;
         if (str < top) {
             if (*str == '*') {
                 if (arg_i >= n_args) {
@@ -1466,7 +1473,8 @@ STATIC mp_obj_t str_modulo_format(mp_obj_t pattern, size_t n_args, const mp_obj_
                 str = (const byte*)str_to_int((const char*)str, (const char*)top, &width);
             }
         }
-        int prec = -1;
+        int prec;
+        prec = -1;
         if (str < top && *str == '.') {
             if (++str < top) {
                 if (*str == '*') {

@@ -168,7 +168,8 @@ STATIC mp_obj_t listdir_next(mp_obj_t self_in) {
     if (self->dir == NULL) {
         goto done;
     }
-    struct dirent *dirent = readdir(self->dir);
+    struct dirent *dirent;
+    dirent = readdir(self->dir);
     if (dirent == NULL) {
         closedir(self->dir);
         self->dir = NULL;

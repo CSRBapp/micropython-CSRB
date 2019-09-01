@@ -87,7 +87,7 @@ MP_DECLARE_CONST_FUN_OBJ_2(mp_op_getitem_obj);
 MP_DECLARE_CONST_FUN_OBJ_3(mp_op_setitem_obj);
 MP_DECLARE_CONST_FUN_OBJ_2(mp_op_delitem_obj);
 
-#include <threads.h>
+#include <thread>
 extern thread_local mp_obj_module_t mp_module___main__;
 extern const mp_obj_module_t mp_module_builtins;
 extern const mp_obj_module_t mp_module_array;

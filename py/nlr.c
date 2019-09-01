@@ -33,11 +33,11 @@
 unsigned int nlr_push_tail(nlr_buf_t *nlr) asm("nlr_push_tail");
 #else
 // LTO can't see inside inline asm functions so explicitly mark nlr_push_tail as used
-__attribute__((used)) unsigned int nlr_push_tail(nlr_buf_t *nlr);
+extern "C" __attribute__((used)) unsigned int nlr_push_tail(nlr_buf_t *nlr);
 #endif
 #endif
 
-unsigned int nlr_push_tail(nlr_buf_t *nlr) {
+extern "C" unsigned int nlr_push_tail(nlr_buf_t *nlr) {
     nlr_buf_t **top = &MP_STATE_THREAD(nlr_top);
     nlr->prev = *top;
     MP_NLR_SAVE_PYSTACK(nlr);
