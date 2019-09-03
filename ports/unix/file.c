@@ -58,12 +58,12 @@ extern const mp_obj_type_t mp_type_textio;
 
 STATIC void fdfile_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     (void)kind;
-    mp_obj_fdfile_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_fdfile_t *self = (mp_obj_fdfile_t*)MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "<io.%s %d>", mp_obj_get_type_str(self_in), self->fd);
 }
 
 STATIC mp_uint_t fdfile_read(mp_obj_t o_in, void *buf, mp_uint_t size, int *errcode) {
-    mp_obj_fdfile_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_fdfile_t *o = (mp_obj_fdfile_t*)MP_OBJ_TO_PTR(o_in);
     check_fd_is_open(o);
     mp_int_t r = read(o->fd, buf, size);
     if (r == -1) {
@@ -74,7 +74,7 @@ STATIC mp_uint_t fdfile_read(mp_obj_t o_in, void *buf, mp_uint_t size, int *errc
 }
 
 STATIC mp_uint_t fdfile_write(mp_obj_t o_in, const void *buf, mp_uint_t size, int *errcode) {
-    mp_obj_fdfile_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_fdfile_t *o = (mp_obj_fdfile_t*)MP_OBJ_TO_PTR(o_in);
     check_fd_is_open(o);
     #if MICROPY_PY_OS_DUPTERM
     if (o->fd <= STDERR_FILENO) {
@@ -99,7 +99,7 @@ STATIC mp_uint_t fdfile_write(mp_obj_t o_in, const void *buf, mp_uint_t size, in
 }
 
 STATIC mp_uint_t fdfile_ioctl(mp_obj_t o_in, mp_uint_t request, uintptr_t arg, int *errcode) {
-    mp_obj_fdfile_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_fdfile_t *o = (mp_obj_fdfile_t*)MP_OBJ_TO_PTR(o_in);
     check_fd_is_open(o);
     switch (request) {
         case MP_STREAM_SEEK: {
@@ -139,7 +139,7 @@ STATIC mp_obj_t fdfile___exit__(size_t n_args, const mp_obj_t *args) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(fdfile___exit___obj, 4, 4, fdfile___exit__);
 
 STATIC mp_obj_t fdfile_fileno(mp_obj_t self_in) {
-    mp_obj_fdfile_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_fdfile_t *self = (mp_obj_fdfile_t*)MP_OBJ_TO_PTR(self_in);
     check_fd_is_open(self);
     return MP_OBJ_NEW_SMALL_INT(self->fd);
 }

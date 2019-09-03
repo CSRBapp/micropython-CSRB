@@ -31,6 +31,7 @@
 #if MICROPY_VFS_POSIX
 
 #include <fcntl.h>
+#include <unistd.h>
 
 #ifdef _WIN32
 #define fsync _commit
@@ -53,7 +54,7 @@ STATIC void check_fd_is_open(const mp_obj_vfs_posix_file_t *o) {
 
 STATIC void vfs_posix_file_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     (void)kind;
-    mp_obj_vfs_posix_file_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_vfs_posix_file_t *self = (mp_obj_vfs_posix_file_t*)MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "<io.%s %d>", mp_obj_get_type_str(self_in), self->fd);
 }
 
@@ -120,7 +121,7 @@ STATIC mp_obj_t vfs_posix_file_make_new(const mp_obj_type_t *type, size_t n_args
 }
 
 STATIC mp_obj_t vfs_posix_file_fileno(mp_obj_t self_in) {
-    mp_obj_vfs_posix_file_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_vfs_posix_file_t *self = (mp_obj_vfs_posix_file_t*)MP_OBJ_TO_PTR(self_in);
     check_fd_is_open(self);
     return MP_OBJ_NEW_SMALL_INT(self->fd);
 }
@@ -133,7 +134,7 @@ STATIC mp_obj_t vfs_posix_file___exit__(size_t n_args, const mp_obj_t *args) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(vfs_posix_file___exit___obj, 4, 4, vfs_posix_file___exit__);
 
 STATIC mp_uint_t vfs_posix_file_read(mp_obj_t o_in, void *buf, mp_uint_t size, int *errcode) {
-    mp_obj_vfs_posix_file_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_vfs_posix_file_t *o = (mp_obj_vfs_posix_file_t*)MP_OBJ_TO_PTR(o_in);
     check_fd_is_open(o);
     mp_int_t r = read(o->fd, buf, size);
     if (r == -1) {
@@ -144,7 +145,7 @@ STATIC mp_uint_t vfs_posix_file_read(mp_obj_t o_in, void *buf, mp_uint_t size, i
 }
 
 STATIC mp_uint_t vfs_posix_file_write(mp_obj_t o_in, const void *buf, mp_uint_t size, int *errcode) {
-    mp_obj_vfs_posix_file_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_vfs_posix_file_t *o = (mp_obj_vfs_posix_file_t*)MP_OBJ_TO_PTR(o_in);
     check_fd_is_open(o);
     #if MICROPY_PY_OS_DUPTERM
     if (o->fd <= STDERR_FILENO) {
@@ -169,7 +170,7 @@ STATIC mp_uint_t vfs_posix_file_write(mp_obj_t o_in, const void *buf, mp_uint_t 
 }
 
 STATIC mp_uint_t vfs_posix_file_ioctl(mp_obj_t o_in, mp_uint_t request, uintptr_t arg, int *errcode) {
-    mp_obj_vfs_posix_file_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_vfs_posix_file_t *o = (mp_obj_vfs_posix_file_t*)MP_OBJ_TO_PTR(o_in);
     check_fd_is_open(o);
     switch (request) {
         case MP_STREAM_FLUSH:
