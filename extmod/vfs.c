@@ -130,7 +130,7 @@ mp_import_stat_t mp_vfs_import_stat(const char *path) {
     }
 
     // If the mounted object has the VFS protocol, call its import_stat helper
-    const mp_vfs_proto_t *proto = mp_obj_get_type(vfs->obj)->protocol;
+    const mp_vfs_proto_t *proto = (const mp_vfs_proto_t*)mp_obj_get_type(vfs->obj)->protocol;
     if (proto != NULL) {
         return proto->import_stat(MP_OBJ_TO_PTR(vfs->obj), path_out);
     }
@@ -334,7 +334,7 @@ typedef struct _mp_vfs_ilistdir_it_t {
 } mp_vfs_ilistdir_it_t;
 
 STATIC mp_obj_t mp_vfs_ilistdir_it_iternext(mp_obj_t self_in) {
-    mp_vfs_ilistdir_it_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_vfs_ilistdir_it_t *self = (mp_vfs_ilistdir_it_t*)MP_OBJ_TO_PTR(self_in);
     if (self->is_iter) {
         // continue delegating to root dir
         return mp_iternext(self->cur.iter);
@@ -353,7 +353,7 @@ STATIC mp_obj_t mp_vfs_ilistdir_it_iternext(mp_obj_t self_in) {
             return mp_iternext(self->cur.iter);
         } else {
             // a mounted directory
-            mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(3, NULL));
+            mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(mp_obj_new_tuple(3, NULL));
             t->items[0] = mp_obj_new_str_of_type(
                 self->is_str ? &mp_type_str : &mp_type_bytes,
                 (const byte*)vfs->str + 1, vfs->len - 1);
@@ -441,7 +441,7 @@ mp_obj_t mp_vfs_stat(mp_obj_t path_in) {
     mp_obj_t path_out;
     mp_vfs_mount_t *vfs = lookup_path(path_in, &path_out);
     if (vfs == MP_VFS_ROOT) {
-        mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
+        mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
         t->items[0] = MP_OBJ_NEW_SMALL_INT(MP_S_IFDIR); // st_mode
         for (int i = 1; i <= 9; ++i) {
             t->items[i] = MP_OBJ_NEW_SMALL_INT(0); // dev, nlink, uid, gid, size, atime, mtime, ctime
@@ -465,7 +465,7 @@ mp_obj_t mp_vfs_statvfs(mp_obj_t path_in) {
 
         // If there's nothing mounted at root then return a mostly-empty tuple
         if (vfs == NULL) {
-            mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
+            mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
 
             // fill in: bsize, frsize, blocks, bfree, bavail, files, ffree, favail, flags
             for (int i = 0; i <= 8; ++i) {

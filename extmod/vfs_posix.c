@@ -63,7 +63,7 @@ STATIC mp_obj_t vfs_posix_get_path_obj(mp_obj_vfs_posix_t *self, mp_obj_t path) 
 }
 
 STATIC mp_obj_t vfs_posix_fun1_helper(mp_obj_t self_in, mp_obj_t path_in, int (*f)(const char*)) {
-    mp_obj_vfs_posix_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_vfs_posix_t *self = (mp_obj_vfs_posix_t*)MP_OBJ_TO_PTR(self_in);
     int ret = f(vfs_posix_get_path_str(self, path_in));
     if (ret != 0) {
         mp_raise_OSError(errno);
@@ -72,7 +72,7 @@ STATIC mp_obj_t vfs_posix_fun1_helper(mp_obj_t self_in, mp_obj_t path_in, int (*
 }
 
 STATIC mp_import_stat_t mp_vfs_posix_import_stat(void *self_in, const char *path) {
-    mp_obj_vfs_posix_t *self = self_in;
+    mp_obj_vfs_posix_t *self = (mp_obj_vfs_posix_t*)self_in;
     if (self->root_len != 0) {
         self->root.len = self->root_len;
         vstr_add_str(&self->root, path);
@@ -106,7 +106,7 @@ STATIC mp_obj_t vfs_posix_make_new(const mp_obj_type_t *type, size_t n_args, siz
 }
 
 STATIC mp_obj_t vfs_posix_mount(mp_obj_t self_in, mp_obj_t readonly, mp_obj_t mkfs) {
-    mp_obj_vfs_posix_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_vfs_posix_t *self = (mp_obj_vfs_posix_t*)MP_OBJ_TO_PTR(self_in);
     if (mp_obj_is_true(readonly)) {
         self->readonly = true;
     }
@@ -124,7 +124,7 @@ STATIC mp_obj_t vfs_posix_umount(mp_obj_t self_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(vfs_posix_umount_obj, vfs_posix_umount);
 
 STATIC mp_obj_t vfs_posix_open(mp_obj_t self_in, mp_obj_t path_in, mp_obj_t mode_in) {
-    mp_obj_vfs_posix_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_vfs_posix_t *self = (mp_obj_vfs_posix_t*)MP_OBJ_TO_PTR(self_in);
     const char *mode = mp_obj_str_get_str(mode_in);
     if (self->readonly
         && (strchr(mode, 'w') != NULL || strchr(mode, 'a') != NULL || strchr(mode, '+') != NULL)) {
@@ -143,7 +143,7 @@ STATIC mp_obj_t vfs_posix_chdir(mp_obj_t self_in, mp_obj_t path_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(vfs_posix_chdir_obj, vfs_posix_chdir);
 
 STATIC mp_obj_t vfs_posix_getcwd(mp_obj_t self_in) {
-    mp_obj_vfs_posix_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_vfs_posix_t *self = (mp_obj_vfs_posix_t*)MP_OBJ_TO_PTR(self_in);
     char buf[MICROPY_ALLOC_PATH_MAX + 1];
     const char *ret = getcwd(buf, sizeof(buf));
     if (ret == NULL) {
@@ -162,7 +162,7 @@ typedef struct _vfs_posix_ilistdir_it_t {
 } vfs_posix_ilistdir_it_t;
 
 STATIC mp_obj_t vfs_posix_ilistdir_it_iternext(mp_obj_t self_in) {
-    vfs_posix_ilistdir_it_t *self = MP_OBJ_TO_PTR(self_in);
+    vfs_posix_ilistdir_it_t *self = (vfs_posix_ilistdir_it_t*)MP_OBJ_TO_PTR(self_in);
 
     if (self->dir == NULL) {
         return MP_OBJ_STOP_ITERATION;
@@ -183,7 +183,7 @@ STATIC mp_obj_t vfs_posix_ilistdir_it_iternext(mp_obj_t self_in) {
         }
 
         // make 3-tuple with info about this entry
-        mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(3, NULL));
+        mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(mp_obj_new_tuple(3, NULL));
 
         if (self->is_str) {
             t->items[0] = mp_obj_new_str(fn, strlen(fn));
@@ -219,7 +219,7 @@ STATIC mp_obj_t vfs_posix_ilistdir_it_iternext(mp_obj_t self_in) {
 }
 
 STATIC mp_obj_t vfs_posix_ilistdir(mp_obj_t self_in, mp_obj_t path_in) {
-    mp_obj_vfs_posix_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_vfs_posix_t *self = (mp_obj_vfs_posix_t*)MP_OBJ_TO_PTR(self_in);
     vfs_posix_ilistdir_it_t *iter = m_new_obj(vfs_posix_ilistdir_it_t);
     iter->base.type = &mp_type_polymorph_iter;
     iter->iternext = vfs_posix_ilistdir_it_iternext;
@@ -243,7 +243,7 @@ typedef struct _mp_obj_listdir_t {
 } mp_obj_listdir_t;
 
 STATIC mp_obj_t vfs_posix_mkdir(mp_obj_t self_in, mp_obj_t path_in) {
-    mp_obj_vfs_posix_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_vfs_posix_t *self = (mp_obj_vfs_posix_t*)MP_OBJ_TO_PTR(self_in);
     int ret = mkdir(vfs_posix_get_path_str(self, path_in), 0777);
     if (ret != 0) {
         mp_raise_OSError(errno);
@@ -258,7 +258,7 @@ STATIC mp_obj_t vfs_posix_remove(mp_obj_t self_in, mp_obj_t path_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(vfs_posix_remove_obj, vfs_posix_remove);
 
 STATIC mp_obj_t vfs_posix_rename(mp_obj_t self_in, mp_obj_t old_path_in, mp_obj_t new_path_in) {
-    mp_obj_vfs_posix_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_vfs_posix_t *self = (mp_obj_vfs_posix_t*)MP_OBJ_TO_PTR(self_in);
     const char *old_path = vfs_posix_get_path_str(self, old_path_in);
     const char *new_path = vfs_posix_get_path_str(self, new_path_in);
     int ret = rename(old_path, new_path);
@@ -275,13 +275,13 @@ STATIC mp_obj_t vfs_posix_rmdir(mp_obj_t self_in, mp_obj_t path_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(vfs_posix_rmdir_obj, vfs_posix_rmdir);
 
 STATIC mp_obj_t vfs_posix_stat(mp_obj_t self_in, mp_obj_t path_in) {
-    mp_obj_vfs_posix_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_vfs_posix_t *self = (mp_obj_vfs_posix_t*)MP_OBJ_TO_PTR(self_in);
     struct stat sb;
     int ret = stat(vfs_posix_get_path_str(self, path_in), &sb);
     if (ret != 0) {
         mp_raise_OSError(errno);
     }
-    mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
+    mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
     t->items[0] = MP_OBJ_NEW_SMALL_INT(sb.st_mode);
     t->items[1] = MP_OBJ_NEW_SMALL_INT(sb.st_ino);
     t->items[2] = MP_OBJ_NEW_SMALL_INT(sb.st_dev);
@@ -317,14 +317,14 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_2(vfs_posix_stat_obj, vfs_posix_stat);
 #endif
 
 STATIC mp_obj_t vfs_posix_statvfs(mp_obj_t self_in, mp_obj_t path_in) {
-    mp_obj_vfs_posix_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_vfs_posix_t *self = (mp_obj_vfs_posix_t*)MP_OBJ_TO_PTR(self_in);
     STRUCT_STATVFS sb;
     const char *path = vfs_posix_get_path_str(self, path_in);
     int ret = STATVFS(path, &sb);
     if (ret != 0) {
         mp_raise_OSError(errno);
     }
-    mp_obj_tuple_t *t = MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
+    mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
     t->items[0] = MP_OBJ_NEW_SMALL_INT(sb.f_bsize);
     t->items[1] = MP_OBJ_NEW_SMALL_INT(sb.f_frsize);
     t->items[2] = MP_OBJ_NEW_SMALL_INT(sb.f_blocks);
