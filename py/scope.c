@@ -108,7 +108,7 @@ STATIC void scope_close_over_in_parents(scope_t *scope, qstr qst) {
     assert(scope->parent != NULL); // we should have at least 1 parent
     for (scope_t *s = scope->parent;; s = s->parent) {
         assert(s->parent != NULL); // we should not get to the outer scope
-        id_info_t *id = scope_find_or_add_id(s, qst, ID_INFO_KIND_UNDECIDED);
+        id_info_t *id = scope_find_or_add_id(s, qst, (scope_kind_t)ID_INFO_KIND_UNDECIDED);
         if (id->kind == ID_INFO_KIND_UNDECIDED) {
             // variable not previously declared in this scope, so declare it as free and keep searching parents
             id->kind = ID_INFO_KIND_FREE;
