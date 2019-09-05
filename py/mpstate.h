@@ -251,6 +251,7 @@ struct mp_functions {
     uint64_t CSRBcontext;
     char *stdout;
     uint32_t stdoutSize;
+    uint32_t stdoutUsage;
 };
 
 // This structure combines the above 3 structures.

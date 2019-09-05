@@ -61,7 +61,8 @@ typedef struct _mp_arg_t {
 extern const byte mp_unary_op_method_name[];
 extern const byte mp_binary_op_method_name[];
 
-void mp_init(struct mp_functions *functions);
+void mp_CSRB_init(struct mp_functions *functions);
+void mp_init(void);
 void mp_deinit(void);
 
 void mp_handle_pending(void);
