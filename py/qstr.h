@@ -52,7 +52,7 @@ typedef struct _qstr_pool_t {
     size_t total_prev_len;
     size_t alloc;
     size_t len;
-    const byte *qstrs[];
+    const byte *qstrs[MP_QSTRnumber_of];
 } qstr_pool_t;
 
 #define QSTR_FROM_STR_STATIC(s) (qstr_from_strn((s), strlen(s)))

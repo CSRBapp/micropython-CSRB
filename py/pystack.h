@@ -85,7 +85,7 @@ static inline void *mp_nonlocal_alloc(size_t n_bytes) {
     return m_new(uint8_t, n_bytes);
 }
 
-static inline void *mp_nonlocal_realloc(void *ptr, [[maybe_unused]] size_t old_n_bytes, size_t new_n_bytes) {
+static inline void *mp_nonlocal_realloc(void *ptr, size_t old_n_bytes, size_t new_n_bytes) {
     return m_renew(uint8_t, ptr, old_n_bytes, new_n_bytes);
 }
 
