@@ -28,6 +28,11 @@
 
 #if MICROPY_NLR_SETJMP
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 void nlr_jump(void *val) {
     nlr_buf_t **top_ptr = &MP_STATE_THREAD(nlr_top);
     nlr_buf_t *top = *top_ptr;
@@ -39,5 +44,9 @@ void nlr_jump(void *val) {
     *top_ptr = top->prev;
     longjmp(top->jmpbuf, 1);
 }
+
+#ifdef __cplusplus
+} /* "C" */
+#endif
 
 #endif

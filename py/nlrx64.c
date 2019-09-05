@@ -28,6 +28,11 @@
 
 #if MICROPY_NLR_X64
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #undef nlr_push
 
 // x86-64 callee-save registers are:
@@ -110,5 +115,9 @@ NORETURN void nlr_jump(void *val) {
 
     for (;;); // needed to silence compiler warning
 }
+
+#ifdef __cplusplus
+} /* "C" */
+#endif
 
 #endif // MICROPY_NLR_X64
