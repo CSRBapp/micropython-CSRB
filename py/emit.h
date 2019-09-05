@@ -162,7 +162,7 @@ typedef struct _emit_method_table_t {
 } emit_method_table_t;
 
 static inline void mp_emit_common_get_id_for_load(scope_t *scope, qstr qst) {
-    scope_find_or_add_id(scope, qst, ID_INFO_KIND_GLOBAL_IMPLICIT);
+    scope_find_or_add_id(scope, qst, (scope_kind_t)ID_INFO_KIND_GLOBAL_IMPLICIT);
 }
 
 void mp_emit_common_get_id_for_modification(scope_t *scope, qstr qst);
