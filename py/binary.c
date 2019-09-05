@@ -38,8 +38,12 @@
 
 // Helpers to work with binary-encoded data
 
+#ifdef __cplusplus
+#include <cstddef>
+#else
 #ifndef alignof
 #define alignof(type) offsetof(struct { char c; type t; }, t)
+#endif
 #endif
 
 size_t mp_binary_get_size(char struct_type, char val_type, mp_uint_t *palign) {
