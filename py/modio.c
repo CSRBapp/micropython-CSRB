@@ -42,7 +42,24 @@ extern const mp_obj_type_t mp_type_textio;
 
 #if MICROPY_PY_IO_IOBASE
 
-STATIC const mp_obj_type_t mp_type_iobase;
+STATIC mp_uint_t iobase_read(mp_obj_t obj, void *buf, mp_uint_t size, int *errcode);
+STATIC mp_uint_t iobase_write(mp_obj_t obj, const void *buf, mp_uint_t size, int *errcode);
+STATIC mp_uint_t iobase_ioctl(mp_obj_t obj, mp_uint_t request, uintptr_t arg, int *errcode);
+
+STATIC const mp_stream_p_t iobase_p = {
+    .read = iobase_read,
+    .write = iobase_write,
+    .ioctl = iobase_ioctl,
+};
+
+STATIC mp_obj_t iobase_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args);
+
+STATIC const mp_obj_type_t mp_type_iobase = {
+    { &mp_type_type },
+    .name = MP_QSTR_IOBase,
+    .make_new = iobase_make_new,
+    .protocol = &iobase_p,
+};
 
 STATIC const mp_obj_base_t iobase_singleton = {&mp_type_iobase};
 
@@ -67,6 +84,7 @@ STATIC mp_uint_t iobase_read_write(mp_obj_t obj, void *buf, mp_uint_t size, int 
         return mp_obj_get_int(ret);
     }
 }
+
 STATIC mp_uint_t iobase_read(mp_obj_t obj, void *buf, mp_uint_t size, int *errcode) {
     return iobase_read_write(obj, buf, size, errcode, MP_QSTR_readinto);
 }
@@ -88,19 +106,6 @@ STATIC mp_uint_t iobase_ioctl(mp_obj_t obj, mp_uint_t request, uintptr_t arg, in
         return MP_STREAM_ERROR;
     }
 }
-
-STATIC const mp_stream_p_t iobase_p = {
-    .read = iobase_read,
-    .write = iobase_write,
-    .ioctl = iobase_ioctl,
-};
-
-STATIC const mp_obj_type_t mp_type_iobase = {
-    { &mp_type_type },
-    .name = MP_QSTR_IOBase,
-    .make_new = iobase_make_new,
-    .protocol = &iobase_p,
-};
 
 #endif // MICROPY_PY_IO_IOBASE
 

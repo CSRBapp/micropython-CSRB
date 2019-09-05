@@ -106,8 +106,24 @@ enum {
 // We cannot apply the below to INT8, as their range [-128, 127]
 #define IS_SCALAR_ARRAY_OF_BYTES(tuple_desc) (GET_TYPE(MP_OBJ_SMALL_INT_VALUE((tuple_desc)->items[1]), VAL_TYPE_BITS) == UINT8)
 
+STATIC void uctypes_struct_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind);
+STATIC mp_obj_t uctypes_struct_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args);
+STATIC void uctypes_struct_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest);
+STATIC mp_obj_t uctypes_struct_subscr(mp_obj_t self_in, mp_obj_t index_in, mp_obj_t value);
+STATIC mp_obj_t uctypes_struct_unary_op(mp_unary_op_t op, mp_obj_t self_in);
+STATIC mp_int_t uctypes_get_buffer(mp_obj_t self_in, mp_buffer_info_t *bufinfo, mp_uint_t flags);
+
 // "struct" in uctypes context means "structural", i.e. aggregate, type.
-STATIC const mp_obj_type_t uctypes_struct_type;
+STATIC const mp_obj_type_t uctypes_struct_type = {
+    { &mp_type_type },
+    .name = MP_QSTR_struct,
+    .print = uctypes_struct_print,
+    .make_new = uctypes_struct_make_new,
+    .attr = uctypes_struct_attr,
+    .subscr = uctypes_struct_subscr,
+    .unary_op = uctypes_struct_unary_op,
+    .buffer_p = { .get_buffer = uctypes_get_buffer },
+};
 
 typedef struct _mp_obj_uctypes_struct_t {
     mp_obj_base_t base;
@@ -673,17 +689,6 @@ STATIC mp_obj_t uctypes_struct_bytes_at(mp_obj_t ptr, mp_obj_t size) {
 }
 MP_DEFINE_CONST_FUN_OBJ_2(uctypes_struct_bytes_at_obj, uctypes_struct_bytes_at);
 
-
-STATIC const mp_obj_type_t uctypes_struct_type = {
-    { &mp_type_type },
-    .name = MP_QSTR_struct,
-    .print = uctypes_struct_print,
-    .make_new = uctypes_struct_make_new,
-    .attr = uctypes_struct_attr,
-    .subscr = uctypes_struct_subscr,
-    .unary_op = uctypes_struct_unary_op,
-    .buffer_p = { .get_buffer = uctypes_get_buffer },
-};
 
 STATIC const mp_rom_map_elem_t mp_module_uctypes_globals_table[] = {
     { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_uctypes) },
