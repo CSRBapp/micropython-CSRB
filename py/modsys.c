@@ -52,11 +52,11 @@ STATIC const MP_DEFINE_STR_OBJ(version_obj, "3.4.0");
 // version_info - Python language version that this implementation conforms to, as a tuple of ints
 #define I(n) MP_OBJ_NEW_SMALL_INT(n)
 // TODO: CPython is now at 5-element array, but save 2 els so far...
-STATIC const mp_obj_tuple_t mp_sys_version_info_obj = {{&mp_type_tuple}, 3, {I(3), I(4), I(0)}};
+STATIC const MP_STRUCT_OBJ_TUPLE_T(3) mp_sys_version_info_obj = {{&mp_type_tuple}, 3, {I(3), I(4), I(0)}};
 
 // sys.implementation object
 // this holds the MicroPython version
-STATIC const mp_obj_tuple_t mp_sys_implementation_version_info_obj = {
+STATIC const MP_STRUCT_OBJ_TUPLE_T(3) mp_sys_implementation_version_info_obj = {
     {&mp_type_tuple},
     3,
     { I(MICROPY_VERSION_MAJOR), I(MICROPY_VERSION_MINOR), I(MICROPY_VERSION_MICRO) }
