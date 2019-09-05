@@ -10,16 +10,20 @@ UNAME_S := $(shell uname -s)
 # include py core make definitions
 include $(MPTOP)/py/py.mk
 
-INC +=  -I.
-INC +=  -I..
-INC +=  -I$(MPTOP)
-INC +=  -I$(MPTOP)/ports/unix
+INC += -I.
+INC += -I..
+INC += -I$(MPTOP)
+INC += -I$(MPTOP)/ports/unix
+INC += -I$(MPTOP)/ports/CSRB
 INC += -I$(BUILD)
 
 # compiler settings
 CWARN = -Wall -Werror
 CWARN += -Wpointer-arith -Wuninitialized
-CFLAGS = $(INC) $(CWARN) -std=gnu99 -DUNIX $(CFLAGS_MOD) $(COPT) $(CFLAGS_EXTRA)
+CFLAGS = $(INC) $(CWARN) -std=c++17 -DUNIX -DMICROPY_NLR_SETJMP $(CFLAGS_MOD) $(COPT) $(CFLAGS_EXTRA)
+
+# CSRB NOTES
+# - Without MICROPY_NLR_SETJMP, the ASM code crashes the execution
 
 # Debugging/Optimization
 ifdef DEBUG
@@ -59,25 +63,15 @@ endif
 # while cross-compile ports require gcc, so we test here for OSX and
 # if necessary override the value of 'CC' set in py/mkenv.mk
 ifeq ($(UNAME_S),Darwin)
-CC = clang
+CC = clang++
 # Use clang syntax for map file
 LDFLAGS_ARCH = -Wl,-map,$@.map
 else
 # Use gcc syntax for map file
-CC = clang
+CC = clang++
 LDFLAGS_ARCH = -Wl,-Map=$@.map,--cref
 endif
 LDFLAGS = $(LDFLAGS_MOD) $(LDFLAGS_ARCH) -lm $(LDFLAGS_EXTRA)
-
-ifeq ($(MICROPY_FORCE_32BIT),1)
-# Note: you may need to install i386 versions of dependency packages,
-# starting with linux-libc-dev:i386
-ifeq ($(MICROPY_PY_FFI),1)
-ifeq ($(UNAME_S),Linux)
-CFLAGS_MOD += -I/usr/include/i686-linux-gnu
-endif
-endif
-endif
 
 ifeq ($(MICROPY_USE_READLINE),1)
 INC +=  -I$(MPTOP)/lib/mp-readline
@@ -126,6 +120,9 @@ LDFLAGS_MOD += $(LIBFFI_LDFLAGS_MOD)
 SRC_MOD += modffi.c
 endif
 
+#CFLAGS_MOD +=
+SRC_MOD += modCSRB.c
+
 # source files
 SRC_C = $(addprefix ports/unix/,\
 	gccollect.c \
@@ -138,6 +135,9 @@ SRC_C = $(addprefix ports/unix/,\
 	alloc.c \
 	coverage.c \
 	fatfs_port.c \
+	)
+
+SRC_C += $(addprefix ports/CSRB/,\
 	$(SRC_MOD) \
 	)
 

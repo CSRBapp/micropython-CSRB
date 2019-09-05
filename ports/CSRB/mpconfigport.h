@@ -1,31 +1,3 @@
-/*
- * This file is part of the MicroPython project, http://micropython.org/
- *
- * The MIT License (MIT)
- *
- * Copyright (c) 2015 Damien P. George
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
-// options to control how MicroPython is built
-
 #define MICROPY_ALLOC_PATH_MAX      (PATH_MAX)
 #define MICROPY_ENABLE_GC           (1)
 #define MICROPY_ENABLE_FINALISER    (0)
@@ -37,7 +9,7 @@
 #define MICROPY_KBD_EXCEPTION       (1)
 #define MICROPY_HELPER_REPL         (1)
 #define MICROPY_HELPER_LEXER_UNIX   (1)
-#define MICROPY_ENABLE_SOURCE_LINE  (0)
+#define MICROPY_ENABLE_SOURCE_LINE  (0) /* CSRB: set? */
 #define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_TERSE)
 #define MICROPY_WARNINGS            (0)
 #define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF   (0)
@@ -49,7 +21,7 @@
 #define MICROPY_CAN_OVERRIDE_BUILTINS (0)
 #define MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG (0)
 #define MICROPY_CPYTHON_COMPAT      (0)
-#define MICROPY_PY_BUILTINS_BYTEARRAY (0)
+#define MICROPY_PY_BUILTINS_BYTEARRAY (1)
 #define MICROPY_PY_BUILTINS_MEMORYVIEW (0)
 #define MICROPY_PY_BUILTINS_COMPILE (0)
 #define MICROPY_PY_BUILTINS_ENUMERATE (0)
@@ -65,26 +37,24 @@
 #define MICROPY_PY_MICROPYTHON_MEM_INFO (0)
 #define MICROPY_PY_GC               (0)
 #define MICROPY_PY_GC_COLLECT_RETVAL (0)
-#define MICROPY_PY_ARRAY            (0)
-#define MICROPY_PY_COLLECTIONS      (0)
-#define MICROPY_PY_MATH             (0)
-#define MICROPY_PY_CMATH            (0)
-#define MICROPY_PY_IO               (0)
-#define MICROPY_PY_IO_FILEIO        (0)
-#define MICROPY_PY_STRUCT           (0)
-#define MICROPY_PY_SYS              (1)
+#define MICROPY_PY_ARRAY            (1)
+#define MICROPY_PY_COLLECTIONS      (1)
+#define MICROPY_PY_MATH             (1)
+#define MICROPY_PY_STRUCT           (1)
+#define MICROPY_PY_SYS              (0)
 #define MICROPY_PY_SYS_EXIT         (0)
-#define MICROPY_PY_SYS_PLATFORM     "linux"
+#define MICROPY_PY_SYS_PLATFORM     "CSRB"
 #define MICROPY_PY_SYS_MAXSIZE      (0)
 #define MICROPY_PY_SYS_STDFILES     (0)
-#define MICROPY_PY_CMATH            (0)
-#define MICROPY_PY_UCTYPES          (0)
-#define MICROPY_PY_UZLIB            (0)
-#define MICROPY_PY_UJSON            (0)
+#define MICROPY_PY_CMATH            (1)
+#define MICROPY_PY_UCTYPES          (1)
+#define MICROPY_PY_UZLIB            (1)
+#define MICROPY_PY_UJSON            (1)
 #define MICROPY_PY_URE              (0)
 #define MICROPY_PY_UHEAPQ           (0)
-#define MICROPY_PY_UHASHLIB         (0)
-#define MICROPY_PY_UBINASCII        (0)
+#define MICROPY_PY_UHASHLIB         (1)
+#define MICROPY_PY_UBINASCII        (1)
+
 /* py/modio.c */
 #define MICROPY_PY_IO		(1) /* needed for VFS_X */
 #define MICROPY_PY_IO_IOBASE	(1)
@@ -149,6 +119,10 @@ typedef long mp_off_t;
 #include <alloca.h>
 #endif
 
+
+/* disable the redirection of the system's printf to MP's functions */
+#define MICROPY_USE_INTERNAL_PRINTF	(0)
+
 #include <stdint.h>
-extern void mp_csrb_print_strn(const char *str, const uint32_t strSize);
+extern "C" void mp_csrb_print_strn(const char *str, const uint32_t strSize);
 #define MP_PLAT_PRINT_STRN(str, len) mp_csrb_print_strn(str, len)
