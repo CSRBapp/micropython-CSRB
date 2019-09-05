@@ -75,6 +75,11 @@
 #include <setjmp.h>
 #endif
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 typedef struct _nlr_buf_t nlr_buf_t;
 struct _nlr_buf_t {
     // the entries here must all be machine word size
@@ -103,7 +108,7 @@ struct _nlr_buf_t {
 
 // Helper macro to use at the start of a specific nlr_jump implementation
 #define MP_NLR_JUMP_HEAD(val, top) \
-    nlr_buf_t **_top_ptr = &MP_STATE_THREAD(nlr_top); \
+    nlr_buf_t **_top_ptr = (nlr_buf_t**)&MP_STATE_THREAD(nlr_top); \
     nlr_buf_t *top = *_top_ptr; \
     if (top == NULL) { \
         nlr_jump_fail(val); \
@@ -121,7 +126,7 @@ struct _nlr_buf_t {
 unsigned int nlr_push(nlr_buf_t *);
 #endif
 
-extern "C" unsigned int nlr_push_tail(nlr_buf_t *top);
+unsigned int nlr_push_tail(nlr_buf_t *top);
 void nlr_pop(void);
 NORETURN void nlr_jump(void *val);
 
@@ -129,6 +134,10 @@ NORETURN void nlr_jump(void *val);
 // if no nlr buf has been pushed.  It must not return, but rather
 // should bail out with a fatal error.
 NORETURN void nlr_jump_fail(void *val);
+
+#if defined(__clang__) && defined(__cplusplus)
+} /* "C" */
+#endif
 
 // use nlr_raise instead of nlr_jump so that debugging is easier
 #ifndef MICROPY_DEBUG_NLR

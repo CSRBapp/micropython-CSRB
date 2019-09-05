@@ -26,6 +26,11 @@
 
 #include "py/mpstate.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #if !MICROPY_NLR_SETJMP
 // When not using setjmp, nlr_push_tail is called from inline asm so needs special care
 #if MICROPY_NLR_X86 && MICROPY_NLR_OS_WINDOWS
@@ -33,12 +38,12 @@
 unsigned int nlr_push_tail(nlr_buf_t *nlr) asm("nlr_push_tail");
 #else
 // LTO can't see inside inline asm functions so explicitly mark nlr_push_tail as used
-extern "C" __attribute__((used)) unsigned int nlr_push_tail(nlr_buf_t *nlr);
+__attribute__((used)) unsigned int nlr_push_tail(nlr_buf_t *nlr);
 #endif
 #endif
 
-extern "C" unsigned int nlr_push_tail(nlr_buf_t *nlr) {
-    nlr_buf_t **top = &MP_STATE_THREAD(nlr_top);
+unsigned int nlr_push_tail(nlr_buf_t *nlr) {
+    nlr_buf_t **top = (nlr_buf_t**)&MP_STATE_THREAD(nlr_top);
     nlr->prev = *top;
     MP_NLR_SAVE_PYSTACK(nlr);
     *top = nlr;
@@ -46,6 +51,10 @@ extern "C" unsigned int nlr_push_tail(nlr_buf_t *nlr) {
 }
 
 void nlr_pop(void) {
-    nlr_buf_t **top = &MP_STATE_THREAD(nlr_top);
+    nlr_buf_t **top = (nlr_buf_t**)&MP_STATE_THREAD(nlr_top);
     *top = (*top)->prev;
 }
+
+#ifdef __cplusplus
+} /* "C" */
+#endif
