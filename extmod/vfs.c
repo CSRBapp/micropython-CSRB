@@ -42,6 +42,10 @@
 #include "extmod/vfs_posix.h"
 #endif
 
+#if MICROPY_VFS_CSRB
+#include "extmod/vfs_csrb.h"
+#endif
+
 // For mp_vfs_proxy_call, the maximum number of additional args that can be passed.
 // A fixed maximum size is used to avoid the need for a costly variable array.
 #define PROXY_MAX_ARGS (2)
@@ -273,6 +277,10 @@ mp_obj_t mp_vfs_open(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
     if (mp_obj_is_small_int(args[ARG_file].u_obj)) {
         return mp_vfs_posix_file_open(&mp_type_textio, args[ARG_file].u_obj, args[ARG_mode].u_obj);
     }
+    #endif
+
+    #if MICROPY_VFS_CSRB
+    /* TODO: add CSRB handling */
     #endif
 
     mp_vfs_mount_t *vfs = lookup_path(args[ARG_file].u_obj, &args[ARG_file].u_obj);

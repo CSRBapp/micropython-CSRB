@@ -33,7 +33,7 @@
 #define MICROPY_COMP_CONST          (0)
 #define MICROPY_MEM_STATS           (0)
 #define MICROPY_DEBUG_PRINTERS      (0)
-#define MICROPY_READER_POSIX        (1)
+#define MICROPY_READER_POSIX        (0)	/* a 1 uses system calls (open() etc) */
 #define MICROPY_KBD_EXCEPTION       (1)
 #define MICROPY_HELPER_REPL         (1)
 #define MICROPY_HELPER_LEXER_UNIX   (1)
@@ -85,6 +85,22 @@
 #define MICROPY_PY_UHEAPQ           (0)
 #define MICROPY_PY_UHASHLIB         (0)
 #define MICROPY_PY_UBINASCII        (0)
+/* py/modio.c */
+#define MICROPY_PY_IO		(1) /* needed for VFS_X */
+#define MICROPY_PY_IO_IOBASE	(1)
+#define MICROPY_PY_IO_FILEIO	(1) /* used also by VFS_CSRB */
+#define MICROPY_PY_IO_BYTESIO	(1)
+
+/* extmod/vfs.c */
+#define MICROPY_VFS       	(1)
+#define MICROPY_VFS_CSRB       	(1)
+
+#define MICROPY_READER_VFS     	(1)
+
+#define mp_builtin_open_obj mp_vfs_open_obj
+#define MICROPY_PORT_BUILTINS \
+{ MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mp_builtin_open_obj) },
+#define mp_type_fileio mp_type_vfs_csrb_fileio
 
 extern const struct _mp_obj_module_t mp_module_os;
 
