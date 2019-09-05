@@ -28,8 +28,7 @@
 
 #include "py/obj.h"
 
-#include <thread>
-extern thread_local mp_map_t mp_builtin_module_map;
+extern const mp_map_t mp_builtin_module_map;
 extern const mp_map_t mp_builtin_module_weak_links_map;
 
 mp_obj_t mp_module_get(qstr module_name);
