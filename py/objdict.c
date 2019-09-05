@@ -378,8 +378,26 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_KW(dict_update_obj, 1, dict_update);
 /******************************************************************************/
 /* dict views                                                                 */
 
-STATIC const mp_obj_type_t dict_view_type;
-STATIC const mp_obj_type_t dict_view_it_type;
+STATIC void dict_view_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind);
+STATIC mp_obj_t dict_view_binary_op(mp_binary_op_t op, mp_obj_t lhs_in, mp_obj_t rhs_in);
+STATIC mp_obj_t dict_view_getiter(mp_obj_t view_in, mp_obj_iter_buf_t *iter_buf);
+
+STATIC const mp_obj_type_t dict_view_type = {
+    { &mp_type_type },
+    .name = MP_QSTR_dict_view,
+    .print = dict_view_print,
+    .binary_op = dict_view_binary_op,
+    .getiter = dict_view_getiter,
+};
+
+STATIC mp_obj_t dict_view_it_iternext(mp_obj_t self_in);
+
+STATIC const mp_obj_type_t dict_view_it_type = {
+    { &mp_type_type },
+    .name = MP_QSTR_iterator,
+    .getiter = mp_identity_getiter,
+    .iternext = dict_view_it_iternext,
+};
 
 typedef enum _mp_dict_view_kind_t {
     MP_DICT_VIEW_ITEMS,
@@ -424,13 +442,6 @@ STATIC mp_obj_t dict_view_it_iternext(mp_obj_t self_in) {
     }
 }
 
-STATIC const mp_obj_type_t dict_view_it_type = {
-    { &mp_type_type },
-    .name = MP_QSTR_iterator,
-    .getiter = mp_identity_getiter,
-    .iternext = dict_view_it_iternext,
-};
-
 STATIC mp_obj_t dict_view_getiter(mp_obj_t view_in, mp_obj_iter_buf_t *iter_buf) {
     assert(sizeof(mp_obj_dict_view_it_t) <= sizeof(mp_obj_iter_buf_t));
     mp_check_self(mp_obj_is_type(view_in, &dict_view_type));
@@ -474,14 +485,6 @@ STATIC mp_obj_t dict_view_binary_op(mp_binary_op_t op, mp_obj_t lhs_in, mp_obj_t
     }
     return dict_binary_op(op, o->dict, rhs_in);
 }
-
-STATIC const mp_obj_type_t dict_view_type = {
-    { &mp_type_type },
-    .name = MP_QSTR_dict_view,
-    .print = dict_view_print,
-    .binary_op = dict_view_binary_op,
-    .getiter = dict_view_getiter,
-};
 
 STATIC mp_obj_t mp_obj_new_dict_view(mp_obj_t dict, mp_dict_view_kind_t kind) {
     mp_obj_dict_view_t *o = m_new_obj(mp_obj_dict_view_t);
