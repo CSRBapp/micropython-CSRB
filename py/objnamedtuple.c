@@ -179,6 +179,9 @@ STATIC mp_obj_t new_namedtuple_type(mp_obj_t name_in, mp_obj_t fields_in) {
     mp_obj_get_array(fields_in, &n_fields, &fields);
     return mp_obj_new_namedtuple_type(name, n_fields, fields);
 }
+#ifdef __cplusplus
+extern "C"
+#endif
 MP_DEFINE_CONST_FUN_OBJ_2(mp_namedtuple_obj, new_namedtuple_type);
 
 #endif // MICROPY_PY_COLLECTIONS

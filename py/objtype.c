@@ -1362,12 +1362,18 @@ STATIC mp_obj_t mp_builtin_issubclass(mp_obj_t object, mp_obj_t classinfo) {
     return mp_obj_is_subclass(object, classinfo);
 }
 
+#ifdef __cplusplus
+extern "C"
+#endif
 MP_DEFINE_CONST_FUN_OBJ_2(mp_builtin_issubclass_obj, mp_builtin_issubclass);
 
 STATIC mp_obj_t mp_builtin_isinstance(mp_obj_t object, mp_obj_t classinfo) {
     return mp_obj_is_subclass(MP_OBJ_FROM_PTR(mp_obj_get_type(object)), classinfo);
 }
 
+#ifdef __cplusplus
+extern "C"
+#endif
 MP_DEFINE_CONST_FUN_OBJ_2(mp_builtin_isinstance_obj, mp_builtin_isinstance);
 
 mp_obj_t mp_instance_cast_to_native_base(mp_const_obj_t self_in, mp_const_obj_t native_type) {
