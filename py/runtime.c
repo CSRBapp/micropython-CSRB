@@ -51,20 +51,17 @@
 #define DEBUG_OP_printf(...) (void)0
 #endif
 
-thread_local mp_obj_module_t mp_module___main__;
+const mp_obj_module_t mp_module___main__ = {
+    .base = { &mp_type_module },
+    .globals = (mp_obj_dict_t*)&MP_STATE_VM(dict_main),
+};
 
-extern void init_mp_builtin_module_map(void);
-extern void init_mp_module_sys_globals_table(void);
 
 void mp_init(struct mp_functions *functions) {
     mp_state_ctx.functions = *functions;
     //fprintf(stdout, "%p/%p\n", functions->stdout, mp_state_ctx.functions.stdout);
 
-    mp_module___main__.base.type = &mp_type_module;
-    mp_module___main__.globals = (mp_obj_dict_t*)&MP_STATE_VM(dict_main);
 
-    init_mp_builtin_module_map();
-    init_mp_module_sys_globals_table();
 
     qstr_init();
 
