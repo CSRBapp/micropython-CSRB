@@ -122,6 +122,8 @@ endif
 
 #CFLAGS_MOD +=
 SRC_MOD += modCSRB.c
+	vfs_csrb.c \
+	vfs_csrb_file.c
 
 # source files
 SRC_C = $(addprefix ports/unix/,\
