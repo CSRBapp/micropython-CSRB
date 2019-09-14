@@ -39,6 +39,10 @@
 #include <math.h>
 #endif
 
+#if MICROPY_VFS
+#include "extmod/vfs.h"
+#endif
+
 #if MICROPY_PY_IO
 extern struct _mp_dummy_t mp_sys_stdout_obj; // type is irrelevant, just need pointer
 #endif
