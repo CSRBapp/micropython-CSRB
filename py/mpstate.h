@@ -253,6 +253,7 @@ typedef struct _mp_state_ctx_t {
     mp_state_thread_t thread;
     mp_state_vm_t vm;
     mp_state_mem_t mem;
+    void *port_ctx;
 } mp_state_ctx_t;
 
 #ifdef __cplusplus
@@ -262,6 +263,7 @@ extern thread_local mp_state_ctx_t mp_state_ctx;
 extern mp_state_ctx_t mp_state_ctx;
 #endif
 
+#define MP_STATE(x) (mp_state_ctx.x)
 #define MP_STATE_VM(x) (mp_state_ctx.vm.x)
 #define MP_STATE_MEM(x) (mp_state_ctx.mem.x)
 
