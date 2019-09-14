@@ -39,36 +39,8 @@ STATIC mp_obj_t vfs_csrb_get_path_obj(mp_obj_vfs_csrb_t *self, mp_obj_t path) {
     }
 }
 
-#ifdef DELME
-STATIC mp_obj_t vfs_csrb_fun1_helper(mp_obj_t self_in, mp_obj_t path_in, int (*f)(const char*)) {
-    mp_obj_vfs_csrb_t *self = (mp_obj_vfs_csrb_t*)MP_OBJ_TO_PTR(self_in);
-    int ret = f(vfs_csrb_get_path_str(self, path_in));
-    if (ret != 0) {
-        mp_raise_OSError(errno);
-    }
-    return mp_const_none;
-}
-#endif
-
 STATIC mp_import_stat_t mp_vfs_csrb_import_stat(void *self_in, const char *path) {
     return MP_IMPORT_STAT_NO_EXIST;
-#ifdef DELME
-    mp_obj_vfs_csrb_t *self = (mp_obj_vfs_csrb_t*)self_in;
-    if (self->root_len != 0) {
-        self->root.len = self->root_len;
-        vstr_add_str(&self->root, path);
-        path = vstr_null_terminated_str(&self->root);
-    }
-    struct stat st;
-    if (stat(path, &st) == 0) {
-        if (S_ISDIR(st.st_mode)) {
-            return MP_IMPORT_STAT_DIR;
-        } else if (S_ISREG(st.st_mode)) {
-            return MP_IMPORT_STAT_FILE;
-        }
-    }
-    return MP_IMPORT_STAT_NO_EXIST;
-#endif
 }
 
 STATIC mp_obj_t vfs_csrb_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
@@ -121,25 +93,15 @@ STATIC mp_obj_t vfs_csrb_open(mp_obj_t self_in, mp_obj_t path_in, mp_obj_t mode_
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(vfs_csrb_open_obj, vfs_csrb_open);
 
 STATIC mp_obj_t vfs_csrb_chdir(mp_obj_t self_in, mp_obj_t path_in) {
-	DEBUG(("chdir():\n"));
+    DEBUG(("chdir():\n"));
     mp_raise_OSError(EIO);
     //return vfs_csrb_fun1_helper(self_in, path_in, chdir);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(vfs_csrb_chdir_obj, vfs_csrb_chdir);
 
 STATIC mp_obj_t vfs_csrb_getcwd(mp_obj_t self_in) {
-	DEBUG(("getcwd():\n"));
+    DEBUG(("getcwd():\n"));
     mp_raise_OSError(EIO);
-#ifdef DELME
-    mp_obj_vfs_csrb_t *self = (mp_obj_vfs_csrb_t*)MP_OBJ_TO_PTR(self_in);
-    char buf[MICROPY_ALLOC_PATH_MAX + 1];
-    const char *ret = getcwd(buf, sizeof(buf));
-    if (ret == NULL) {
-        mp_raise_OSError(errno);
-    }
-    ret += self->root_len;
-    return mp_obj_new_str(ret, strlen(ret));
-#endif
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(vfs_csrb_getcwd_obj, vfs_csrb_getcwd);
 
@@ -157,74 +119,24 @@ STATIC mp_obj_t vfs_csrb_ilistdir_it_iternext(mp_obj_t self_in) {
         return MP_OBJ_STOP_ITERATION;
     }
 
-	if (self->iterator == self->entries->end())
-	{
-		delete self->entries;
-		self->entries = NULL;
-		//self->iterator =;
-		return MP_OBJ_STOP_ITERATION;
-	}
+    if (self->iterator == self->entries->end())
+    {
+        delete self->entries;
+        self->entries = NULL;
+        //self->iterator =;
+        return MP_OBJ_STOP_ITERATION;
+    }
 
     // make 3-tuple with info about this entry
     mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(mp_obj_new_tuple(3, NULL));
     
     t->items[0] = mp_obj_new_str(self->iterator->c_str(), self->iterator->size());
-	self->iterator++;
+    self->iterator++;
 
-	t->items[1] = MP_OBJ_NEW_SMALL_INT(0);
+    t->items[1] = MP_OBJ_NEW_SMALL_INT(0);
     t->items[2] = MP_OBJ_NEW_SMALL_INT(0);
 
     return MP_OBJ_FROM_PTR(t);
-#ifdef DELME
-//    for (;;) {
-        struct dirent *dirent = readdir(self->dir);
-        if (dirent == NULL) {
-            closedir(self->dir);
-            self->dir = NULL;
-            return MP_OBJ_STOP_ITERATION;
-        }
-        const char *fn = dirent->d_name;
-
-        if (fn[0] == '.' && (fn[1] == 0 || fn[1] == '.')) {
-            // skip . and ..
-            continue;
-        }
-
-        // make 3-tuple with info about this entry
-        mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(mp_obj_new_tuple(3, NULL));
-
-        if (self->is_str) {
-            t->items[0] = mp_obj_new_str(fn, strlen(fn));
-        } else {
-            t->items[0] = mp_obj_new_bytes((const byte*)fn, strlen(fn));
-        }
-
-        #ifdef _DIRENT_HAVE_D_TYPE
-        #ifdef DTTOIF
-        t->items[1] = MP_OBJ_NEW_SMALL_INT(DTTOIF(dirent->d_type));
-        #else
-        if (dirent->d_type == DT_DIR) {
-            t->items[1] = MP_OBJ_NEW_SMALL_INT(MP_S_IFDIR);
-        } else if (dirent->d_type == DT_REG) {
-            t->items[1] = MP_OBJ_NEW_SMALL_INT(MP_S_IFREG);
-        } else {
-            t->items[1] = MP_OBJ_NEW_SMALL_INT(dirent->d_type);
-        }
-        #endif
-        #else
-        // DT_UNKNOWN should have 0 value on any reasonable system
-        t->items[1] = MP_OBJ_NEW_SMALL_INT(0);
-        #endif
-
-        #ifdef _DIRENT_HAVE_D_INO
-        t->items[2] = MP_OBJ_NEW_SMALL_INT(dirent->d_ino);
-        #else
-        t->items[2] = MP_OBJ_NEW_SMALL_INT(0);
-        #endif
-
-        return MP_OBJ_FROM_PTR(t);
-    }
-#endif
 }
 
 STATIC mp_obj_t vfs_csrb_ilistdir(mp_obj_t self_in, mp_obj_t path_in) {
@@ -262,54 +174,31 @@ STATIC mp_obj_t vfs_csrb_ilistdir(mp_obj_t self_in, mp_obj_t path_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(vfs_csrb_ilistdir_obj, vfs_csrb_ilistdir);
 
 STATIC mp_obj_t vfs_csrb_mkdir(mp_obj_t self_in, mp_obj_t path_in) {
-	DEBUG(("mkdir():\n"));
+    DEBUG(("mkdir():\n"));
     mp_raise_OSError(EIO);
-#ifdef DELME
-    mp_obj_vfs_csrb_t *self = (mp_obj_vfs_csrb_t*)MP_OBJ_TO_PTR(self_in);
-    int ret = mkdir(vfs_csrb_get_path_str(self, path_in), 0777);
-    if (ret != 0) {
-        mp_raise_OSError(errno);
-    }
-    return mp_const_none;
-#endif
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(vfs_csrb_mkdir_obj, vfs_csrb_mkdir);
 
 STATIC mp_obj_t vfs_csrb_remove(mp_obj_t self_in, mp_obj_t path_in) {
-	DEBUG(("remove():\n"));
+    DEBUG(("remove():\n"));
     mp_raise_OSError(EIO);
-#ifdef DELME
-    return vfs_csrb_fun1_helper(self_in, path_in, unlink);
-#endif
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(vfs_csrb_remove_obj, vfs_csrb_remove);
 
 STATIC mp_obj_t vfs_csrb_rename(mp_obj_t self_in, mp_obj_t old_path_in, mp_obj_t new_path_in) {
-	DEBUG(("rename():\n"));
+    DEBUG(("rename():\n"));
     mp_raise_OSError(EIO);
-#ifdef DELME
-    mp_obj_vfs_csrb_t *self = (mp_obj_vfs_csrb_t*)MP_OBJ_TO_PTR(self_in);
-    const char *old_path = vfs_csrb_get_path_str(self, old_path_in);
-    const char *new_path = vfs_csrb_get_path_str(self, new_path_in);
-    int ret = rename(old_path, new_path);
-    if (ret != 0) {
-        mp_raise_OSError(errno);
-    }
-#endif
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(vfs_csrb_rename_obj, vfs_csrb_rename);
 
 STATIC mp_obj_t vfs_csrb_rmdir(mp_obj_t self_in, mp_obj_t path_in) {
-	DEBUG(("rmdir():\n"));
+    DEBUG(("rmdir():\n"));
     mp_raise_OSError(EIO);
-#ifdef DELME
-    return vfs_csrb_fun1_helper(self_in, path_in, rmdir);
-#endif
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(vfs_csrb_rmdir_obj, vfs_csrb_rmdir);
 
 STATIC mp_obj_t vfs_csrb_stat(mp_obj_t self_in, mp_obj_t path_in) {
-	DEBUG(("stat():\n"));
+    DEBUG(("stat():\n"));
     mp_obj_vfs_csrb_t *self = (mp_obj_vfs_csrb_t*)MP_OBJ_TO_PTR(self_in);
     mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
     struct stat sb;
@@ -317,7 +206,7 @@ STATIC mp_obj_t vfs_csrb_stat(mp_obj_t self_in, mp_obj_t path_in) {
     //ret = stat(vfs_csrb_get_path_str(self, path_in), &sb);
     CSRBvfs::stat stat;
     ret = port_ctx->csrbVFS->getattr(vfs_csrb_get_path_str(self, path_in), stat);
-	DEBUG(("stat(): getattr %" FORMAT_RET_T "\n", ret));
+    DEBUG(("stat(): getattr %" FORMAT_RET_T "\n", ret));
     if (ret != RET_OK) {
         mp_raise_OSError(ENOENT);
     }
@@ -338,29 +227,8 @@ STATIC mp_obj_t vfs_csrb_stat(mp_obj_t self_in, mp_obj_t path_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(vfs_csrb_stat_obj, vfs_csrb_stat);
 
 STATIC mp_obj_t vfs_csrb_statvfs(mp_obj_t self_in, mp_obj_t path_in) {
-	DEBUG(("statvfs():\n"));
+    DEBUG(("statvfs():\n"));
     mp_raise_OSError(EIO);
-#ifdef DELME
-    mp_obj_vfs_csrb_t *self = (mp_obj_vfs_csrb_t*)MP_OBJ_TO_PTR(self_in);
-    STRUCT_STATVFS sb;
-    const char *path = vfs_csrb_get_path_str(self, path_in);
-    int ret = STATVFS(path, &sb);
-    if (ret != 0) {
-        mp_raise_OSError(errno);
-    }
-    mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(mp_obj_new_tuple(10, NULL));
-    t->items[0] = MP_OBJ_NEW_SMALL_INT(sb.f_bsize);
-    t->items[1] = MP_OBJ_NEW_SMALL_INT(sb.f_frsize);
-    t->items[2] = MP_OBJ_NEW_SMALL_INT(sb.f_blocks);
-    t->items[3] = MP_OBJ_NEW_SMALL_INT(sb.f_bfree);
-    t->items[4] = MP_OBJ_NEW_SMALL_INT(sb.f_bavail);
-    t->items[5] = MP_OBJ_NEW_SMALL_INT(sb.f_files);
-    t->items[6] = MP_OBJ_NEW_SMALL_INT(sb.f_ffree);
-    t->items[7] = MP_OBJ_NEW_SMALL_INT(F_FAVAIL);
-    t->items[8] = MP_OBJ_NEW_SMALL_INT(F_FLAG);
-    t->items[9] = MP_OBJ_NEW_SMALL_INT(F_NAMEMAX);
-    return MP_OBJ_FROM_PTR(t);
-#endif
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(vfs_csrb_statvfs_obj, vfs_csrb_statvfs);
 
