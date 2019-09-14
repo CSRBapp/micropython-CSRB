@@ -5,11 +5,11 @@
 #define MICROPY_COMP_CONST          (0)
 #define MICROPY_MEM_STATS           (0)
 #define MICROPY_DEBUG_PRINTERS      (0)
-#define MICROPY_READER_POSIX        (0)	/* a 1 uses system calls (open() etc) */
+#define MICROPY_READER_POSIX        (0) /* a 1 uses system calls (open() etc) */
 #define MICROPY_KBD_EXCEPTION       (1)
 #define MICROPY_HELPER_REPL         (1)
-#define MICROPY_HELPER_LEXER_UNIX   (1)
-#define MICROPY_ENABLE_SOURCE_LINE  (0) /* CSRB: set? */
+#define MICROPY_HELPER_LEXER_UNIX   (0) /* 1: needs mp_reader_new_file_from_fd() */
+#define MICROPY_ENABLE_SOURCE_LINE  (1)
 #define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_TERSE)
 #define MICROPY_WARNINGS            (0)
 #define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF   (0)
@@ -55,27 +55,30 @@
 #define MICROPY_PY_UHASHLIB         (1)
 #define MICROPY_PY_UBINASCII        (1)
 
+/* enable module thread and support thread safety */
+#define MICROPY_PY_THREAD           (0) /* TODO: needs porting */
+/* enabme internal thread synchronization */
+#define MICROPY_PY_THREAD_GIL       (0) /* TODO: needs porting */
+
 /* py/modio.c */
-#define MICROPY_PY_IO		(1) /* needed for VFS_X */
-#define MICROPY_PY_IO_IOBASE	(1)
-#define MICROPY_PY_IO_FILEIO	(1) /* used also by VFS_CSRB */
-#define MICROPY_PY_IO_BYTESIO	(1)
+#define MICROPY_PY_IO               (1) /* needed for mp_type_stringio */
+#define MICROPY_PY_IO_IOBASE        (0) /* handled by VFS_CSRB */
+#define MICROPY_PY_IO_BUFFEREDWRITER (0) /* handled by VFS_CSRB */
+#define MICROPY_PY_IO_FILEIO        (0) /* handled by VFS_CSRB */
+#define MICROPY_PY_IO_BYTESIO       (0) /* handled by VFS_CSRB */
 
 /* extmod/vfs.c */
-#define MICROPY_VFS       	(1)
-#define MICROPY_VFS_CSRB       	(1)
+#define MICROPY_VFS                 (1)
+#define MICROPY_VFS_CSRB            (1)
 
-#define MICROPY_READER_VFS     	(1)
+#define MICROPY_ENABLE_EXTERNAL_IMPORT        (0) /* disable importing of external modules at runtime */
 
 #define mp_builtin_open_obj mp_vfs_open_obj
 #define MICROPY_PORT_BUILTINS \
-{ MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mp_builtin_open_obj) },
-#define mp_type_fileio mp_type_vfs_csrb_fileio
+{ MP_ROM_QSTR(MP_QSTR_open), MP_ROM_PTR(&mp_builtin_open_obj) }, \
+{ MP_ROM_QSTR(MP_QSTR_listdir), MP_ROM_PTR(&mp_vfs_listdir_obj) }, \
+{ MP_ROM_QSTR(MP_QSTR_stat), MP_ROM_PTR(&mp_vfs_stat_obj) }, \
 
-extern const struct _mp_obj_module_t mp_module_os;
-
-#define MICROPY_PORT_BUILTIN_MODULES \
-    { MP_ROM_QSTR(MP_QSTR_uos), MP_ROM_PTR(&mp_module_os) }, \
 
 #define MICROPY_PORT_ROOT_POINTERS \
 
@@ -121,8 +124,9 @@ typedef long mp_off_t;
 
 
 /* disable the redirection of the system's printf to MP's functions */
-#define MICROPY_USE_INTERNAL_PRINTF	(0)
+#define MICROPY_USE_INTERNAL_PRINTF        (0)
 
-#include <stdint.h>
-extern "C" void mp_csrb_print_strn(const char *str, const uint32_t strSize);
-#define MP_PLAT_PRINT_STRN(str, len) mp_csrb_print_strn(str, len)
+extern "C++"
+{
+#include <mp_csrb.h>
+}
