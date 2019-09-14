@@ -45,21 +45,11 @@
 /****************************************************************/
 // Lock object
 
-STATIC const mp_obj_type_t mp_type_thread_lock;
-
 typedef struct _mp_obj_thread_lock_t {
     mp_obj_base_t base;
     mp_thread_mutex_t mutex;
     volatile bool locked;
 } mp_obj_thread_lock_t;
-
-STATIC mp_obj_thread_lock_t *mp_obj_new_thread_lock(void) {
-    mp_obj_thread_lock_t *self = m_new_obj(mp_obj_thread_lock_t);
-    self->base.type = &mp_type_thread_lock;
-    mp_thread_mutex_init(&self->mutex);
-    self->locked = false;
-    return self;
-}
 
 STATIC mp_obj_t thread_lock_acquire(size_t n_args, const mp_obj_t *args) {
     mp_obj_thread_lock_t *self = (mp_obj_thread_lock_t*)MP_OBJ_TO_PTR(args[0]);
@@ -114,7 +104,6 @@ STATIC const mp_rom_map_elem_t thread_lock_locals_dict_table[] = {
     { MP_ROM_QSTR(MP_QSTR___enter__), MP_ROM_PTR(&thread_lock_acquire_obj) },
     { MP_ROM_QSTR(MP_QSTR___exit__), MP_ROM_PTR(&thread_lock___exit___obj) },
 };
-
 STATIC MP_DEFINE_CONST_DICT(thread_lock_locals_dict, thread_lock_locals_dict_table);
 
 STATIC const mp_obj_type_t mp_type_thread_lock = {
@@ -122,6 +111,14 @@ STATIC const mp_obj_type_t mp_type_thread_lock = {
     .name = MP_QSTR_lock,
     .locals_dict = (mp_obj_dict_t*)&thread_lock_locals_dict,
 };
+
+STATIC mp_obj_thread_lock_t *mp_obj_new_thread_lock(void) {
+    mp_obj_thread_lock_t *self = m_new_obj(mp_obj_thread_lock_t);
+    self->base.type = &mp_type_thread_lock;
+    mp_thread_mutex_init(&self->mutex);
+    self->locked = false;
+    return self;
+}
 
 /****************************************************************/
 // _thread module
