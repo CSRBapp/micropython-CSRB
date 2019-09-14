@@ -56,18 +56,7 @@ const mp_obj_module_t mp_module___main__ = {
     .globals = (mp_obj_dict_t*)&MP_STATE_VM(dict_main),
 };
 
-void mp_CSRB_init(struct mp_functions *functions) {
-    printf("mp_CSRB_init(): entry mp_module___main__=%p functions=%p\n", &mp_module___main__, functions);
-
-    mp_state_ctx.functions = *functions;
-    //fprintf(stdout, "%p/%p\n", functions->stdout, mp_state_ctx.functions.stdout);
-
-    mp_init();
-}
-
 void mp_init(void) {
-    printf("mp_init(): entry\n");
-
     qstr_init();
 
     // no pending exceptions to start with

@@ -191,4 +191,3 @@ $(BUILD)/$(BTREE_DIR)/%.o: CFLAGS += -Wno-old-style-definition -Wno-sign-compare
 $(BUILD)/extmod/modbtree.o: CFLAGS += $(BTREE_DEFS)
 endif
 
-$(BUILD)/extmod/vfs_csrb_file.o: CFLAGS += -I../../../CSRBcore

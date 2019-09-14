@@ -181,8 +181,6 @@ PY_EXTMOD_O_BASENAME = \
 	extmod/vfs_reader.o \
 	extmod/vfs_posix.o \
 	extmod/vfs_posix_file.o \
-	extmod/vfs_csrb.o \
-	extmod/vfs_csrb_file.o \
 	extmod/vfs_fat.o \
 	extmod/vfs_fat_diskio.o \
 	extmod/vfs_fat_file.o \
