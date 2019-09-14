@@ -62,7 +62,7 @@ STATIC mp_obj_thread_lock_t *mp_obj_new_thread_lock(void) {
 }
 
 STATIC mp_obj_t thread_lock_acquire(size_t n_args, const mp_obj_t *args) {
-    mp_obj_thread_lock_t *self = MP_OBJ_TO_PTR(args[0]);
+    mp_obj_thread_lock_t *self = (mp_obj_thread_lock_t*)MP_OBJ_TO_PTR(args[0]);
     bool wait = true;
     if (n_args > 1) {
         wait = mp_obj_get_int(args[1]);
@@ -83,7 +83,7 @@ STATIC mp_obj_t thread_lock_acquire(size_t n_args, const mp_obj_t *args) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(thread_lock_acquire_obj, 1, 3, thread_lock_acquire);
 
 STATIC mp_obj_t thread_lock_release(mp_obj_t self_in) {
-    mp_obj_thread_lock_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_thread_lock_t *self = (mp_obj_thread_lock_t*)MP_OBJ_TO_PTR(self_in);
     if (!self->locked) {
         mp_raise_msg(&mp_type_RuntimeError, NULL);
     }
@@ -96,7 +96,7 @@ STATIC mp_obj_t thread_lock_release(mp_obj_t self_in) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(thread_lock_release_obj, thread_lock_release);
 
 STATIC mp_obj_t thread_lock_locked(mp_obj_t self_in) {
-    mp_obj_thread_lock_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_thread_lock_t *self = (mp_obj_thread_lock_t*)MP_OBJ_TO_PTR(self_in);
     return mp_obj_new_bool(self->locked);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(thread_lock_locked_obj, thread_lock_locked);
