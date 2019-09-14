@@ -121,7 +121,7 @@ SRC_MOD += modffi.c
 endif
 
 #CFLAGS_MOD +=
-SRC_MOD += modCSRB.c
+SRC_MOD += mp_csrb.c \
 	vfs_csrb.c \
 	vfs_csrb_file.c
 
@@ -132,7 +132,6 @@ SRC_C = $(addprefix ports/unix/,\
 	input.c \
 	file.c \
 	modmachine.c \
-	modos.c \
 	moduselect.c \
 	alloc.c \
 	coverage.c \

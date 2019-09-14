@@ -1,11 +1,13 @@
 #include "py/runtime.h"
 #include "py/stream.h"
-#include "extmod/vfs_csrb.h"
+#include "vfs_csrb.h"
 
 #if MICROPY_VFS_CSRB
 
 #include <fcntl.h>
 #include <unistd.h>
+
+#include <CSRBvfs.h>
 
 #ifdef _WIN32
 #define fsync _commit
@@ -13,26 +15,25 @@
 
 typedef struct _mp_obj_vfs_csrb_file_t {
     mp_obj_base_t base;
-    int fd;
+    mp_obj_t filename;
+    uint64_t handle;
+    uint32_t offset;
 } mp_obj_vfs_csrb_file_t;
 
-#ifdef MICROPY_CPYTHON_COMPAT
 STATIC void check_fd_is_open(const mp_obj_vfs_csrb_file_t *o) {
-    if (o->fd < 0) {
+    if (o->handle == 0) {
         nlr_raise(mp_obj_new_exception_msg(&mp_type_ValueError, "I/O operation on closed file"));
     }
 }
-#else
-#define check_fd_is_open(o)
-#endif
 
 STATIC void vfs_csrb_file_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     (void)kind;
     mp_obj_vfs_csrb_file_t *self = (mp_obj_vfs_csrb_file_t*)MP_OBJ_TO_PTR(self_in);
-    mp_printf(print, "<io.%s %d>", mp_obj_get_type_str(self_in), self->fd);
+    mp_printf(print, "<io.%s %" PRIx64 ">", mp_obj_get_type_str(self_in), self->handle);
 }
 
 mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_obj_t mode_in) {
+    mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
     mp_obj_vfs_csrb_file_t *o = m_new_obj(mp_obj_vfs_csrb_file_t);
     const char *mode_s = mp_obj_str_get_str(mode_in);
 
@@ -67,6 +68,28 @@ mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_o
 
     o->base.type = type;
 
+    uint64_t handle;
+    //handle = csrb->helperRandomU64();
+    handle = rand();
+
+    ret_t ret;
+    mp_obj_t fid = file_in;
+    const char *fname = mp_obj_str_get_str(fid);
+    ret = port_ctx->csrbVFS->open(fname, handle);
+    DEBUG(("open: %s, ret:%" PRIdFAST16 "\n", fname, ret));
+    switch(ret)
+    {
+        case RET_OK:
+	    o->filename = file_in;
+            o->handle = handle;
+	    o->offset = 0;
+            return MP_OBJ_FROM_PTR(o);
+        default:
+            o->handle = -1;
+            return MP_OBJ_FROM_PTR(o);
+    }
+
+#ifdef DELME
     mp_obj_t fid = file_in;
 
     if (mp_obj_is_small_int(fid)) {
@@ -81,6 +104,7 @@ mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_o
     }
     o->fd = fd;
     return MP_OBJ_FROM_PTR(o);
+#endif
 }
 
 STATIC mp_obj_t vfs_csrb_file_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
@@ -97,7 +121,7 @@ STATIC mp_obj_t vfs_csrb_file_make_new(const mp_obj_type_t *type, size_t n_args,
 STATIC mp_obj_t vfs_csrb_file_fileno(mp_obj_t self_in) {
     mp_obj_vfs_csrb_file_t *self = (mp_obj_vfs_csrb_file_t*)MP_OBJ_TO_PTR(self_in);
     check_fd_is_open(self);
-    return MP_OBJ_NEW_SMALL_INT(self->fd);
+    return MP_OBJ_NEW_SMALL_INT(self->handle);
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(vfs_csrb_file_fileno_obj, vfs_csrb_file_fileno);
 
@@ -108,61 +132,157 @@ STATIC mp_obj_t vfs_csrb_file___exit__(size_t n_args, const mp_obj_t *args) {
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(vfs_csrb_file___exit___obj, 4, 4, vfs_csrb_file___exit__);
 
 STATIC mp_uint_t vfs_csrb_file_read(mp_obj_t o_in, void *buf, mp_uint_t size, int *errcode) {
+    mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
     mp_obj_vfs_csrb_file_t *o = (mp_obj_vfs_csrb_file_t*)MP_OBJ_TO_PTR(o_in);
     check_fd_is_open(o);
-    mp_int_t r = -1; errno=666;//read(o->fd, buf, size);
+
+    ret_t ret;
+    uint32_t sizeRead;
+
+    ret = port_ctx->csrbVFS->read(mp_obj_str_get_str(o->filename), o->handle, (char *)buf, size, o->offset, sizeRead);
+    DEBUG(("read(): %s handle:%" PRIx64 " size:%lu sizeRead:%u ret:%" PRIdFAST16 "\n",
+        mp_obj_str_get_str(o->filename), o->handle, size, sizeRead, ret));
+    switch(ret)
+    {
+       case RET_OK:
+       case RET_NOTFOUND:      /* read all as 0s */
+	   o->offset += ret;
+           return sizeRead;
+       case RET_EMPTY:
+           return 0;
+       case RET_TIMEOUT:
+           *errcode = EAGAIN;
+           break;
+       case RET_FAIL:
+           *errcode = ENOENT;
+           break;
+       default:
+           *errcode = EIO;
+           break;
+    }
+
+    return MP_STREAM_ERROR;
+
+#ifdef DELME
+    mp_int_t r = read(o->fd, buf, size);
     if (r == -1) {
         *errcode = errno;
         return MP_STREAM_ERROR;
     }
     return r;
+#endif
 }
 
 STATIC mp_uint_t vfs_csrb_file_write(mp_obj_t o_in, const void *buf, mp_uint_t size, int *errcode) {
+    mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
     mp_obj_vfs_csrb_file_t *o = (mp_obj_vfs_csrb_file_t*)MP_OBJ_TO_PTR(o_in);
     check_fd_is_open(o);
-    mp_int_t r = -1; errno=666;//write(o->fd, buf, size);
+
+    ret_t ret;
+    uint32_t sizeWritten;
+
+    ret = port_ctx->csrbVFS->write(mp_obj_str_get_str(o->filename), o->handle, (char *)buf, size, o->offset, sizeWritten);
+    DEBUG(("write(): %s handle:%" PRIx64 " size:%lu sizeWritten:%u ret:%" PRIdFAST16 "\n",
+        mp_obj_str_get_str(o->filename), o->handle, size, sizeWritten, ret));
+    switch(ret)
+    {
+        case RET_OK:
+            o->offset += sizeWritten;
+            return sizeWritten;
+        case RET_NOTFOUND:
+        case RET_TIMEOUT:
+            *errcode = EAGAIN;
+            break;
+        default:
+            *errcode = EIO;
+            break;
+    }
+
+    return MP_STREAM_ERROR;
+
+#ifdef DELME
+    mp_int_t r = write(o->fd, buf, size);
     while (r == -1 && errno == EINTR) {
         if (MP_STATE_VM(mp_pending_exception) != MP_OBJ_NULL) {
             mp_obj_t obj = MP_STATE_VM(mp_pending_exception);
             MP_STATE_VM(mp_pending_exception) = MP_OBJ_NULL;
             nlr_raise(obj);
         }
-        r = -1; errno=666;//write(o->fd, buf, size);
+        r = write(o->fd, buf, size);
     }
     if (r == -1) {
         *errcode = errno;
         return MP_STREAM_ERROR;
     }
     return r;
+#endif
 }
 
 STATIC mp_uint_t vfs_csrb_file_ioctl(mp_obj_t o_in, mp_uint_t request, uintptr_t arg, int *errcode) {
+    mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
     mp_obj_vfs_csrb_file_t *o = (mp_obj_vfs_csrb_file_t*)MP_OBJ_TO_PTR(o_in);
     check_fd_is_open(o);
+
+    DEBUG(("ioctl(): %s handle:%" PRIx64 " request:%lu\n",
+        mp_obj_str_get_str(o->filename), o->handle, request));
+
     switch (request) {
         case MP_STREAM_FLUSH:
-            //if (fsync(o->fd) < 0) {
-                *errcode = 666;//errno;
+            *errcode = 0;
+            return 0;
+#ifdef DELME
+            if (fsync(o->fd) < 0) {
+                *errcode = errno;
                 return MP_STREAM_ERROR;
-            //}
-            //return 0;
+            }
+            return 0;
+#endif
         case MP_STREAM_SEEK: {
             struct mp_stream_seek_t *s = (struct mp_stream_seek_t*)arg;
-            off_t off = -1; errno=666;//lseek(o->fd, s->offset, s->whence);
+            DEBUG(("ioctl(SEEK): %s handle:%" PRIx64 " whence:%d offset:%ld\n",
+                mp_obj_str_get_str(o->filename), o->handle, s->whence, s->offset));
+            switch(s->whence)
+            {
+                case SEEK_SET:
+                    o->offset = s->offset;
+                    break;
+                case SEEK_CUR:
+                    o->offset += s->offset;
+                    break;
+                case SEEK_END:
+                default:
+                    *errcode = EIO;
+                    return MP_STREAM_ERROR;
+            }
+            *errcode = 0;
+	    return 0;
+#ifdef DELME
+            off_t off = lseek(o->fd, s->offset, s->whence);
             if (off == (off_t)-1) {
                 *errcode = errno;
                 return MP_STREAM_ERROR;
             }
             s->offset = off;
             return 0;
+#endif
         }
         case MP_STREAM_CLOSE:
-            //close(o->fd);
+            ret_t ret;
+            ret = port_ctx->csrbVFS->close(mp_obj_str_get_str(o->filename), o->handle);
+            if (ret != RET_OK)
+            {
+                *errcode = EIO;
+                return MP_STREAM_ERROR;
+            }
+            *errcode = 0;
+            return 0;
+#ifdef DELME
+            close(o->fd);
             #ifdef MICROPY_CPYTHON_COMPAT
-            o->fd = -1;
+            o->handle = 0;
             #endif
             return 0;
+#endif
         default:
             *errcode = EINVAL;
             return MP_STREAM_ERROR;
@@ -222,9 +342,5 @@ const mp_obj_type_t mp_type_vfs_csrb_textio = {
     .protocol = &textio_stream_p,
     .locals_dict = (mp_obj_dict_t*)&rawfile_locals_dict,
 };
-
-const mp_obj_vfs_csrb_file_t mp_sys_stdin_obj  = {{&mp_type_textio}, STDIN_FILENO};
-const mp_obj_vfs_csrb_file_t mp_sys_stdout_obj = {{&mp_type_textio}, STDOUT_FILENO};
-const mp_obj_vfs_csrb_file_t mp_sys_stderr_obj = {{&mp_type_textio}, STDERR_FILENO};
 
 #endif // MICROPY_VFS_CSRB
