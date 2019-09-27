@@ -52,7 +52,7 @@ mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_o
     mp_obj_t fid = file_in;
     const char *fname = mp_obj_str_get_str(fid);
     ret = port_ctx->csrbVFS->open(fname, handle);
-    DEBUG(("open: %s, ret:%" PRIdFAST16 "\n", fname, ret));
+    DEBUG(("open: %s, ret:%" FORMAT_RET_T "\n", fname, ret));
     switch(ret)
     {
         case RET_OK:
@@ -100,7 +100,7 @@ STATIC mp_uint_t vfs_csrb_file_read(mp_obj_t o_in, void *buf, mp_uint_t size, in
     uint32_t sizeRead;
 
     ret = port_ctx->csrbVFS->read(mp_obj_str_get_str(o->filename), o->handle, (char *)buf, size, o->offset, sizeRead);
-    DEBUG(("read(): %s handle:%" PRIx64 " size:%lu sizeRead:%u ret:%" PRIdFAST16 "\n",
+    DEBUG(("read(): %s handle:%" PRIx64 " size:%lu sizeRead:%u ret:%" FORMAT_RET_T "\n",
         mp_obj_str_get_str(o->filename), o->handle, size, sizeRead, ret));
     switch(ret)
     {
@@ -133,7 +133,7 @@ STATIC mp_uint_t vfs_csrb_file_write(mp_obj_t o_in, const void *buf, mp_uint_t s
     uint32_t sizeWritten;
 
     ret = port_ctx->csrbVFS->write(mp_obj_str_get_str(o->filename), o->handle, (char *)buf, size, o->offset, sizeWritten);
-    DEBUG(("write(): %s handle:%" PRIx64 " size:%lu sizeWritten:%u ret:%" PRIdFAST16 "\n",
+    DEBUG(("write(): %s handle:%" PRIx64 " size:%lu sizeWritten:%u ret:%" FORMAT_RET_T "\n",
         mp_obj_str_get_str(o->filename), o->handle, size, sizeWritten, ret));
     switch(ret)
     {

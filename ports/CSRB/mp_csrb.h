@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <CSRBvfs.h>
 
-#define __DEBUG(format, ...) do{ fprintf(stderr, "[CSRBVFS] " format, ## __VA_ARGS__); }while(0)
+#define __DEBUG(format, ...) do{ fprintf(stderr, "[MP_CSRB_VFS] %s:%u| " format, __FUNCTION__, __LINE__, ## __VA_ARGS__); }while(0)
 #define DEBUG(x) __DEBUG x
 
 typedef struct {
