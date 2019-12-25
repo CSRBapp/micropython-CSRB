@@ -135,7 +135,7 @@ NORETURN void nlr_jump(void *val);
 // should bail out with a fatal error.
 NORETURN void nlr_jump_fail(void *val);
 
-#if defined(__clang__) && defined(__cplusplus)
+#if defined(__cplusplus)
 } /* "C" */
 #endif
 
