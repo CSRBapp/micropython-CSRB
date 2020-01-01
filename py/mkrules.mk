@@ -150,7 +150,7 @@ LIBMICROPYTHON = libmicropython.a
 # tracking. Then LIBMICROPYTHON_EXTRA_CMD can e.g. touch some
 # other file to cause needed effect, e.g. relinking with new lib.
 lib $(LIBMICROPYTHON): $(OBJ)
-	$(AR) rcs $(LIBMICROPYTHON) $^
+	$(AR) rcs $(LIBMICROPYTHON) $^ 2>/dev/null
 	$(LIBMICROPYTHON_EXTRA_CMD)
 
 clean:
