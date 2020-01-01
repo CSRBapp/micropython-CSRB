@@ -5,6 +5,7 @@
 #if MICROPY_VFS_CSRB
 
 #include <unistd.h>
+#include <stdint.h>
 
 #include <CSRBvfs.h>
 
@@ -52,7 +53,7 @@ mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_o
     mp_obj_t fid = file_in;
     const char *fname = mp_obj_str_get_str(fid);
     ret = port_ctx->csrbVFS->open(fname, handle);
-    DEBUG(("open: %s, ret:%" FORMAT_RET_T "\n", fname, ret));
+    DEBUG(("open: %s ret:%" FORMAT_RET_T " handle:%" PRIx64 "\n", fname, ret, handle));
     switch(ret)
     {
         case RET_OK:
@@ -64,7 +65,6 @@ mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_o
             o->handle = -1;
             return MP_OBJ_FROM_PTR(o);
     }
-
 }
 
 STATIC mp_obj_t vfs_csrb_file_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
@@ -99,7 +99,7 @@ STATIC mp_uint_t vfs_csrb_file_read(mp_obj_t o_in, void *buf, mp_uint_t size, in
     ret_t ret;
     uint32_t sizeRead;
 
-    ret = port_ctx->csrbVFS->read(mp_obj_str_get_str(o->filename), o->handle, (char *)buf, size, o->offset, sizeRead);
+    ret = port_ctx->csrbVFS->read(mp_obj_str_get_str(o->filename), o->handle, true, (char *)buf, size, o->offset, sizeRead);
     DEBUG(("read(): %s handle:%" PRIx64 " size:%lu sizeRead:%u ret:%" FORMAT_RET_T "\n",
         mp_obj_str_get_str(o->filename), o->handle, size, sizeRead, ret));
     switch(ret)
