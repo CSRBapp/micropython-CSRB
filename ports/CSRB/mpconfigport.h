@@ -71,6 +71,8 @@
 #define MICROPY_VFS                 (1)
 #define MICROPY_VFS_CSRB            (1)
 
+#define MICROPY_READER_VFS          (1)
+
 #define MICROPY_ENABLE_EXTERNAL_IMPORT        (0) /* disable importing of external modules at runtime */
 
 #define mp_builtin_open_obj mp_vfs_open_obj
