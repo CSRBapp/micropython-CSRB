@@ -52,7 +52,8 @@ mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_o
 
     mp_obj_t fid = file_in;
     const char *fname = mp_obj_str_get_str(fid);
-    ret = port_ctx->csrbVFS->open(fname, handle);
+    bool blockMode;
+    ret = port_ctx->csrbVFS->open(fname, handle, blockMode);
     DEBUG(("open: %s ret:%" FORMAT_RET_T " handle:%" PRIx64 "\n", fname, ret, handle));
     switch(ret)
     {
