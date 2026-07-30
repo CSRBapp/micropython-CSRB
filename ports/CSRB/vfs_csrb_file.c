@@ -29,13 +29,34 @@ STATIC void vfs_csrb_file_print(const mp_print_t *print, mp_obj_t self_in, mp_pr
     mp_printf(print, "<io.%s %" PRIx64 ">", mp_obj_get_type_str(self_in), self->handle);
 }
 
+/* Current size of an open file, needed to position for SEEK_END and 'a'. */
+STATIC ret_t vfs_csrb_file_size(mp_port_ctx_t *port_ctx, mp_obj_vfs_csrb_file_t *o, uint64_t *size) {
+    CSRBvfs::vfsUID accessUID;
+    CSRBvfs::stat st;
+    ret_t ret;
+
+    ret = port_ctx->csrbVFS->getattr(mp_obj_str_get_str(o->filename), o->handle, accessUID, st);
+    if (ret == RET_OK) {
+        *size = st.size;
+    }
+    return ret;
+}
+
 mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_obj_t mode_in) {
     mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
     mp_obj_vfs_csrb_file_t *o = m_new_obj(mp_obj_vfs_csrb_file_t);
 
+    bool modeRead;
+    bool modeWrite;
     bool truncate;
+    bool append;
+    bool plus;
 
+    modeRead = false;
+    modeWrite = false;
     truncate = false;
+    append = false;
+    plus = false;
 
     const char *mode_s = mp_obj_str_get_str(mode_in);
     while (*mode_s) {
@@ -46,10 +67,31 @@ mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_o
             case 't':
                 type = &mp_type_vfs_csrb_textio;
                 break;
+            case 'r':
+                modeRead = true;
+                break;
             case 'w':
+                modeWrite = true;
                 truncate = true;
                 break;
+            case 'a':
+                modeWrite = true;
+                append = true;
+                break;
+            case '+':
+                plus = true;
+                break;
         }
+    }
+
+    /* "r+", "w+" and "a+" add the opposite direction to the base mode */
+    if (plus) {
+        modeRead = true;
+        modeWrite = true;
+    }
+    /* a mode string carrying no direction (e.g. just "b") reads, as CPython does */
+    if (!modeRead && !modeWrite) {
+        modeRead = true;
     }
 
     o->base.type = type;
@@ -67,19 +109,34 @@ mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_o
         accessUID,
         &handle,
         truncate,
-        true, // modeRead
-        true, // modeWrite
+        modeRead,
+        modeWrite,
         true, // blocking
         blockMode,
         directIO
     );
-    DEBUG(("open: %s ret:%" FORMAT_RET_T " handle:%p blockMode:%u truncate:%u\n", fname, ret, handle, blockMode, truncate));
+    DEBUG(("open: %s ret:%" FORMAT_RET_T " handle:%p blockMode:%u read:%u write:%u truncate:%u append:%u\n",
+        fname, ret, handle, blockMode, modeRead, modeWrite, truncate, append));
     switch(ret)
     {
         case RET_OK:
             o->filename = file_in;
             o->handle = handle;
             o->offset = 0;
+            if (append) {
+                uint64_t size;
+                ret = vfs_csrb_file_size(port_ctx, o, &size);
+                if (ret != RET_OK) {
+                    /* Without the size we cannot position at the end, and
+                     * appending at 0 would overwrite the file, so fail the
+                     * open rather than silently corrupting it. */
+                    DEBUG(("open: %s append getattr failed %" FORMAT_RET_T "\n", fname, ret));
+                    port_ctx->csrbVFS->close(fname, &o->handle, true, true, true);
+                    o->handle = NULL;
+                    return MP_OBJ_FROM_PTR(o);
+                }
+                o->offset = size;
+            }
             return MP_OBJ_FROM_PTR(o);
         default:
             o->handle = NULL;
@@ -196,7 +253,20 @@ STATIC mp_uint_t vfs_csrb_file_ioctl(mp_obj_t o_in, mp_uint_t request, uintptr_t
                 case SEEK_CUR:
                     o->offset += s->offset;
                     break;
-                case SEEK_END:
+                case SEEK_END: {
+                    uint64_t size;
+                    if (vfs_csrb_file_size(port_ctx, o, &size) != RET_OK) {
+                        *errcode = EIO;
+                        return MP_STREAM_ERROR;
+                    }
+                    /* s->offset is signed and normally <= 0 here */
+                    if (s->offset < 0 && (uint64_t)-s->offset > size) {
+                        *errcode = EINVAL;
+                        return MP_STREAM_ERROR;
+                    }
+                    o->offset = size + s->offset;
+                    break;
+                }
                 default:
                     *errcode = EIO;
                     return MP_STREAM_ERROR;
