@@ -13,25 +13,28 @@ extern "C" void nlr_jump_fail(void *val) {
     exit(1);
 }
 
-void mp_csrb_print_strn(const char *str, const uint32_t strSize)
-{
+void mp_csrb_print_strn(const char *str, const uint32_t strSize) {
     mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
 
 #if 0
-    fprintf(stdout, "[%" PRIx64 "] stdout:%p, stdoutSize:%u\n",
+    fprintf(stdout, "[%" PRIx64 "] consoleBuffer:%p, consoleBufferSize:%u\n",
         port_ctx->CSRBcontext,
-        port_ctx->stdout,
-        port_ctx->stdoutSize);
+        port_ctx->consoleBuffer,
+        port_ctx->consoleBufferSize);
 
     fprintf(stdout, "[%" PRIx64 "] APPENDING [%s] to [%s]\n",
-        port_ctx->CSRBcontext, str, port_ctx->stdout);
+        port_ctx->CSRBcontext, str, port_ctx->consoleBuffer);
 #endif
     uint32_t toWrite;
 
-    toWrite = std::min(strSize, port_ctx->stdoutSize - port_ctx->stdoutUsage - 1);
-    memcpy(port_ctx->stdout + port_ctx->stdoutUsage, str, toWrite);
-    port_ctx->stdoutUsage += toWrite;
-    port_ctx->stdout[port_ctx->stdoutUsage] = 0;
+    toWrite = std::min(strSize, port_ctx->consoleBufferSize - port_ctx->consoleBufferUsage - 1);
+
+    memcpy(port_ctx->consoleBuffer + port_ctx->consoleBufferUsage, str, toWrite);
+
+    port_ctx->consoleBufferUsage += toWrite;
+
+    /* NUL must go after the appended data, not at its start */
+    port_ctx->consoleBuffer[port_ctx->consoleBufferUsage] = 0;
 
     //fprintf(stdout, "%" PRIx64 ":%s\n", port_ctx->CSRBcontext, str);
 }
@@ -57,8 +60,7 @@ void mp_CSRB_init(mp_port_ctx_t *port_ctx) {
     }
 }
 
-void mp_CSRB_deinit(void)
-{
+void mp_CSRB_deinit(void) {
     /* TODO: cleanup! */
 }
 

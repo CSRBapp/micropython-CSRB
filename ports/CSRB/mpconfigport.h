@@ -1,6 +1,10 @@
 #define MICROPY_ALLOC_PATH_MAX      (PATH_MAX)
-#define MICROPY_ENABLE_GC           (1)
+#define MICROPY_ENABLE_GC           (1) /* CSRB: TODO CHECK */
 #define MICROPY_ENABLE_FINALISER    (0)
+/* CSRB: TODO CHECK - a separate allocator for the Python stack; if enabled,
+ * the code must call mp_pystack_init() before mp_init(). */
+#define MICROPY_ENABLE_PYSTACK      (0)
+/* CSRB: TODO CHECK - not checking means a segfault on C stack overflow */
 #define MICROPY_STACK_CHECK         (0)
 #define MICROPY_COMP_CONST          (0)
 #define MICROPY_MEM_STATS           (0)
@@ -54,6 +58,10 @@
 #define MICROPY_PY_UHEAPQ           (0)
 #define MICROPY_PY_UHASHLIB         (1)
 #define MICROPY_PY_UBINASCII        (1)
+
+/* mpconfigport_coverage.h */
+#define MICROPY_PY_BUILTINS_HELP       (1)
+#define MICROPY_PY_BUILTINS_HELP_MODULES (1)
 
 /* enable module thread and support thread safety */
 #define MICROPY_PY_THREAD           (0) /* TODO: needs porting */
@@ -118,7 +126,7 @@ typedef long mp_off_t;
 #endif
 
 // We need to provide a declaration/definition of alloca()
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
 #include <stdlib.h>
 #else
 #include <alloca.h>

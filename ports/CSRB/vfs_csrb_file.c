@@ -8,12 +8,13 @@
 #include <stdint.h>
 
 #include <CSRBvfs.h>
+#include <CSRBfs.h>
 
 typedef struct _mp_obj_vfs_csrb_file_t {
     mp_obj_base_t base;
     mp_obj_t filename;
-    uint64_t handle;
-    uint32_t offset;
+    CSRBvfs::vfsHandle *handle;
+    uint64_t offset;    /* matches the uint64_t offset taken by CSRBvfs read()/write() */
 } mp_obj_vfs_csrb_file_t;
 
 STATIC void check_fd_is_open(const mp_obj_vfs_csrb_file_t *o) {
@@ -32,6 +33,10 @@ mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_o
     mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
     mp_obj_vfs_csrb_file_t *o = m_new_obj(mp_obj_vfs_csrb_file_t);
 
+    bool truncate;
+
+    truncate = false;
+
     const char *mode_s = mp_obj_str_get_str(mode_in);
     while (*mode_s) {
         switch (*mode_s++) {
@@ -41,29 +46,43 @@ mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_o
             case 't':
                 type = &mp_type_vfs_csrb_textio;
                 break;
+            case 'w':
+                truncate = true;
+                break;
         }
     }
 
     o->base.type = type;
 
     ret_t ret;
-    uint64_t handle;
-    handle = 0; /* a 0 handle is changed to a random number by the open() */
+    CSRBvfs::vfsUID accessUID;
+    CSRBvfs::vfsHandle *handle;
 
     mp_obj_t fid = file_in;
     const char *fname = mp_obj_str_get_str(fid);
     bool blockMode;
-    ret = port_ctx->csrbVFS->open(fname, handle, blockMode);
-    DEBUG(("open: %s ret:%" FORMAT_RET_T " handle:%" PRIx64 "\n", fname, ret, handle));
+    bool directIO;
+    ret = port_ctx->csrbVFS->open(
+        fname,
+        accessUID,
+        &handle,
+        truncate,
+        true, // modeRead
+        true, // modeWrite
+        true, // blocking
+        blockMode,
+        directIO
+    );
+    DEBUG(("open: %s ret:%" FORMAT_RET_T " handle:%p blockMode:%u truncate:%u\n", fname, ret, handle, blockMode, truncate));
     switch(ret)
     {
         case RET_OK:
-	    o->filename = file_in;
+            o->filename = file_in;
             o->handle = handle;
-	    o->offset = 0;
+            o->offset = 0;
             return MP_OBJ_FROM_PTR(o);
         default:
-            o->handle = -1;
+            o->handle = NULL;
             return MP_OBJ_FROM_PTR(o);
     }
 }
@@ -98,22 +117,22 @@ STATIC mp_uint_t vfs_csrb_file_read(mp_obj_t o_in, void *buf, mp_uint_t size, in
     check_fd_is_open(o);
 
     ret_t ret;
-    uint32_t sizeRead;
+    uint64_t sizeRead;
 
     ret = port_ctx->csrbVFS->read(mp_obj_str_get_str(o->filename), o->handle, true, (char *)buf, size, o->offset, sizeRead);
-    DEBUG(("read(): %s handle:%" PRIx64 " size:%lu sizeRead:%u ret:%" FORMAT_RET_T "\n",
+    DEBUG(("read(): %s handle:%p size:%lu sizeRead:%" PRIu64 " ret:%" FORMAT_RET_T "\n",
         mp_obj_str_get_str(o->filename), o->handle, size, sizeRead, ret));
     switch(ret)
     {
        case RET_OK:
-       case RET_NOTFOUND:      /* read all as 0s */
-	   o->offset += ret;
+           o->offset += sizeRead;
            return sizeRead;
        case RET_EMPTY:
            return 0;
        case RET_TIMEOUT:
            *errcode = EAGAIN;
            break;
+       case RET_NOTFOUND:      /* read() is called with defaultZero, so this is a real error */
        case RET_FAIL:
            *errcode = ENOENT;
            break;
@@ -131,10 +150,10 @@ STATIC mp_uint_t vfs_csrb_file_write(mp_obj_t o_in, const void *buf, mp_uint_t s
     check_fd_is_open(o);
 
     ret_t ret;
-    uint32_t sizeWritten;
+    uint64_t sizeWritten;
 
-    ret = port_ctx->csrbVFS->write(mp_obj_str_get_str(o->filename), o->handle, (char *)buf, size, o->offset, sizeWritten);
-    DEBUG(("write(): %s handle:%" PRIx64 " size:%lu sizeWritten:%u ret:%" FORMAT_RET_T "\n",
+    ret = port_ctx->csrbVFS->write(mp_obj_str_get_str(o->filename), o->handle, (char *)buf, size, o->offset, sizeWritten, CSRBfs::DO_NOT_TRUNCATE_ENTRY);
+    DEBUG(("write(): %s handle:%p size:%lu sizeWritten:%" PRIu64 " ret:%" FORMAT_RET_T "\n",
         mp_obj_str_get_str(o->filename), o->handle, size, sizeWritten, ret));
     switch(ret)
     {
@@ -158,7 +177,7 @@ STATIC mp_uint_t vfs_csrb_file_ioctl(mp_obj_t o_in, mp_uint_t request, uintptr_t
     mp_obj_vfs_csrb_file_t *o = (mp_obj_vfs_csrb_file_t*)MP_OBJ_TO_PTR(o_in);
     check_fd_is_open(o);
 
-    DEBUG(("ioctl(): %s handle:%" PRIx64 " request:%lu\n",
+    DEBUG(("ioctl(): %s handle:%p request:%lu\n",
         mp_obj_str_get_str(o->filename), o->handle, request));
 
     switch (request) {
@@ -167,7 +186,7 @@ STATIC mp_uint_t vfs_csrb_file_ioctl(mp_obj_t o_in, mp_uint_t request, uintptr_t
             return 0;
         case MP_STREAM_SEEK: {
             struct mp_stream_seek_t *s = (struct mp_stream_seek_t*)arg;
-            DEBUG(("ioctl(SEEK): %s handle:%" PRIx64 " whence:%d offset:%ld\n",
+            DEBUG(("ioctl(SEEK): %s handle:%p whence:%d offset:%ld\n",
                 mp_obj_str_get_str(o->filename), o->handle, s->whence, s->offset));
             switch(s->whence)
             {
@@ -182,12 +201,16 @@ STATIC mp_uint_t vfs_csrb_file_ioctl(mp_obj_t o_in, mp_uint_t request, uintptr_t
                     *errcode = EIO;
                     return MP_STREAM_ERROR;
             }
+            /* mp_stream_seek() returns s->offset to the caller, so it must
+             * carry the resulting absolute position back out.  Without this
+             * tell() (seek(0, SEEK_CUR)) always reports 0. */
+            s->offset = o->offset;
             *errcode = 0;
-	    return 0;
+            return 0;
         }
         case MP_STREAM_CLOSE:
             ret_t ret;
-            ret = port_ctx->csrbVFS->close(mp_obj_str_get_str(o->filename), o->handle);
+            ret = port_ctx->csrbVFS->close(mp_obj_str_get_str(o->filename), &o->handle, true, true, true);
             if (ret != RET_OK)
             {
                 *errcode = EIO;

@@ -5,17 +5,17 @@
 #include <CSRBvfs.h>
 
 #define __DEBUG(format, ...) do{ \
-	fprintf(stderr, "[%lx] [MP_CSRB_VFS] %s|%s:%u|# " format, \
-		pthread_self(), __FILE__,  __FUNCTION__, __LINE__, ## __VA_ARGS__); \
-	}while(0)
+    fprintf(stderr, "[%16.16" PRIx64 "] [MP_CSRB_VFS] %s|%s:%u|# " format, \
+        (uint64_t) pthread_self(), __FILE__,  __FUNCTION__, __LINE__, ## __VA_ARGS__); \
+    }while(0)
 #define DEBUG(x) __DEBUG x
 
 typedef struct {
     CSRBvfs *csrbVFS;
     uint64_t csrbContext;
-    char *stdout;
-    uint32_t stdoutSize;
-    uint32_t stdoutUsage;
+    char *consoleBuffer;
+    uint32_t consoleBufferSize;
+    uint32_t consoleBufferUsage;
 } mp_port_ctx_t;
 
 extern "C" void mp_csrb_print_strn(const char *str, const uint32_t strSize);

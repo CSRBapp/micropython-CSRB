@@ -11,6 +11,8 @@
 #include <sys/stat.h>
 
 #include <CSRBvfs.h>
+#include <CSRBfs.h>
+#include <CSRBvfsHandle.h>
 
 typedef struct _mp_obj_vfs_csrb_t {
     mp_obj_base_t base;
@@ -159,7 +161,10 @@ STATIC mp_obj_t vfs_csrb_ilistdir(mp_obj_t self_in, mp_obj_t path_in) {
 
     entries = new std::vector<std::string>;
 
-    ret = port_ctx->csrbVFS->readdir(path, *entries);
+    /* TODO: ADD OPENDIR */
+    CSRBvfs::vfsHandle handle;
+
+    ret = port_ctx->csrbVFS->readdir(path, &handle, *entries);
     if(ret != RET_OK)
     {
         delete entries;
@@ -204,8 +209,10 @@ STATIC mp_obj_t vfs_csrb_stat(mp_obj_t self_in, mp_obj_t path_in) {
     struct stat sb;
     ret_t ret;
     //ret = stat(vfs_csrb_get_path_str(self, path_in), &sb);
+    CSRBvfs::vfsUID accessUID;
+    CSRBvfs::vfsHandle handle;
     CSRBvfs::stat stat;
-    ret = port_ctx->csrbVFS->getattr(vfs_csrb_get_path_str(self, path_in), stat);
+    ret = port_ctx->csrbVFS->getattr(vfs_csrb_get_path_str(self, path_in), &handle, accessUID, stat);
     DEBUG(("stat(): getattr %" FORMAT_RET_T "\n", ret));
     if (ret != RET_OK) {
         mp_raise_OSError(ENOENT);
