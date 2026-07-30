@@ -115,13 +115,13 @@ STATIC mp_int_t uctypes_get_buffer(mp_obj_t self_in, mp_buffer_info_t *bufinfo, 
 
 // "struct" in uctypes context means "structural", i.e. aggregate, type.
 STATIC const mp_obj_type_t uctypes_struct_type = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_struct,
     .print = uctypes_struct_print,
     .make_new = uctypes_struct_make_new,
+    .unary_op = uctypes_struct_unary_op,
     .attr = uctypes_struct_attr,
     .subscr = uctypes_struct_subscr,
-    .unary_op = uctypes_struct_unary_op,
     .buffer_p = { .get_buffer = uctypes_get_buffer },
 };
 

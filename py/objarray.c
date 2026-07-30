@@ -540,14 +540,14 @@ STATIC MP_DEFINE_CONST_DICT(array_locals_dict, array_locals_dict_table);
 
 #if MICROPY_PY_ARRAY
 const mp_obj_type_t mp_type_array = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_array,
     .print = array_print,
     .make_new = array_make_new,
-    .getiter = array_iterator_new,
     .unary_op = array_unary_op,
     .binary_op = array_binary_op,
     .subscr = array_subscr,
+    .getiter = array_iterator_new,
     .buffer_p = { .get_buffer = array_get_buffer },
     .locals_dict = (mp_obj_dict_t*)&array_locals_dict,
 };
@@ -555,14 +555,14 @@ const mp_obj_type_t mp_type_array = {
 
 #if MICROPY_PY_BUILTINS_BYTEARRAY
 const mp_obj_type_t mp_type_bytearray = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_bytearray,
     .print = array_print,
     .make_new = bytearray_make_new,
-    .getiter = array_iterator_new,
     .unary_op = array_unary_op,
     .binary_op = array_binary_op,
     .subscr = array_subscr,
+    .getiter = array_iterator_new,
     .buffer_p = { .get_buffer = array_get_buffer },
     .locals_dict = (mp_obj_dict_t*)&array_locals_dict,
 };
@@ -570,16 +570,16 @@ const mp_obj_type_t mp_type_bytearray = {
 
 #if MICROPY_PY_BUILTINS_MEMORYVIEW
 const mp_obj_type_t mp_type_memoryview = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_memoryview,
     .make_new = memoryview_make_new,
-    .getiter = array_iterator_new,
     .unary_op = array_unary_op,
     .binary_op = array_binary_op,
     #if MICROPY_PY_BUILTINS_MEMORYVIEW_ITEMSIZE
     .attr = memoryview_attr,
     #endif
     .subscr = array_subscr,
+    .getiter = array_iterator_new,
     .buffer_p = { .get_buffer = array_get_buffer },
 };
 #endif
@@ -629,7 +629,7 @@ STATIC mp_obj_t array_it_iternext(mp_obj_t self_in) {
 }
 
 STATIC const mp_obj_type_t array_it_type = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_iterator,
     .getiter = mp_identity_getiter,
     .iternext = array_it_iternext,

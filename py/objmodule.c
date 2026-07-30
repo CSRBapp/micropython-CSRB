@@ -101,7 +101,7 @@ STATIC void module_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
 }
 
 const mp_obj_type_t mp_type_module = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_module,
     .print = module_print,
     .attr = module_attr,

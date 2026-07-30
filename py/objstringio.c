@@ -251,7 +251,7 @@ STATIC const mp_stream_p_t bytesio_stream_p = {
 };
 
 const mp_obj_type_t mp_type_stringio = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_StringIO,
     .print = stringio_print,
     .make_new = stringio_make_new,
@@ -263,7 +263,7 @@ const mp_obj_type_t mp_type_stringio = {
 
 #if MICROPY_PY_IO_BYTESIO
 const mp_obj_type_t mp_type_bytesio = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_BytesIO,
     .print = stringio_print,
     .make_new = stringio_make_new,

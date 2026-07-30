@@ -150,7 +150,7 @@ STATIC void mp_help_print_obj(const mp_obj_t obj) {
         map = &mp_obj_module_get_globals(obj)->map;
     } else {
         if (type == &mp_type_type) {
-            type = MP_OBJ_TO_PTR(obj);
+            type = (mp_obj_type_t *) MP_OBJ_TO_PTR(obj);
         }
         if (type->locals_dict != NULL) {
             map = &type->locals_dict->map;

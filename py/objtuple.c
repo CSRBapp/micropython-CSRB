@@ -219,7 +219,7 @@ STATIC const mp_rom_map_elem_t tuple_locals_dict_table[] = {
 STATIC MP_DEFINE_CONST_DICT(tuple_locals_dict, tuple_locals_dict_table);
 
 const mp_obj_type_t mp_type_tuple = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_tuple,
     .print = mp_obj_tuple_print,
     .make_new = mp_obj_tuple_make_new,

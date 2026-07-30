@@ -20,7 +20,15 @@ INC += -I$(BUILD)
 # compiler settings
 CWARN = -Wall -Werror
 CWARN += -Wpointer-arith -Wuninitialized
-CFLAGS = $(INC) $(CWARN) -std=c++17 -DUNIX -DMICROPY_NLR_SETJMP $(CFLAGS_MOD) $(COPT) $(CFLAGS_EXTRA)
+# This port builds the MicroPython core with clang++ so it can be driven from
+# C++ classes.  The core is written in C99, which uses two initializer forms
+# that C++ does not have; clang accepts both as extensions and only warns, so
+# suppress the warnings rather than patching the shared core:
+#   c99-designator    - array designators ([IDX] = val) and initializer lists
+#                       that mix positional and .field = val entries
+#   reorder-init-list - .field initializers not in struct declaration order
+CWARN += -Wno-c99-designator -Wno-reorder-init-list
+CFLAGS = $(INC) $(CWARN) -DUNIX -DMICROPY_NLR_SETJMP $(CFLAGS_MOD) $(COPT) $(CFLAGS_EXTRA)
 
 # CSRB NOTES
 # - Without MICROPY_NLR_SETJMP, the ASM code crashes the execution

@@ -51,7 +51,7 @@ STATIC mp_obj_t range_it_iternext(mp_obj_t o_in) {
 }
 
 STATIC const mp_obj_type_t range_it_type = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_iterator,
     .getiter = mp_identity_getiter,
     .iternext = range_it_iternext,
@@ -208,7 +208,7 @@ STATIC void range_attr(mp_obj_t o_in, qstr attr, mp_obj_t *dest) {
 #endif
 
 const mp_obj_type_t mp_type_range = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_range,
     .print = range_print,
     .make_new = range_make_new,
@@ -216,9 +216,9 @@ const mp_obj_type_t mp_type_range = {
     #if MICROPY_PY_BUILTINS_RANGE_BINOP
     .binary_op = range_binary_op,
     #endif
+    #if MICROPY_PY_BUILTINS_RANGE_ATTRS
+    .attr = range_attr,
+    #endif
     .subscr = range_subscr,
     .getiter = range_getiter,
-#if MICROPY_PY_BUILTINS_RANGE_ATTRS
-    .attr = range_attr,
-#endif
 };

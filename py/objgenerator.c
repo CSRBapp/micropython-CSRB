@@ -64,7 +64,7 @@ STATIC mp_obj_t gen_wrap_call(mp_obj_t self_in, size_t n_args, size_t n_kw, cons
 }
 
 const mp_obj_type_t mp_type_gen_wrap = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_generator,
     .call = gen_wrap_call,
     .unary_op = mp_generic_unary_op,
@@ -320,7 +320,7 @@ STATIC const mp_rom_map_elem_t gen_instance_locals_dict_table[] = {
 STATIC MP_DEFINE_CONST_DICT(gen_instance_locals_dict, gen_instance_locals_dict_table);
 
 const mp_obj_type_t mp_type_gen_instance = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_generator,
     .print = gen_instance_print,
     .unary_op = mp_generic_unary_op,

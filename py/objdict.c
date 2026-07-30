@@ -383,7 +383,7 @@ STATIC mp_obj_t dict_view_binary_op(mp_binary_op_t op, mp_obj_t lhs_in, mp_obj_t
 STATIC mp_obj_t dict_view_getiter(mp_obj_t view_in, mp_obj_iter_buf_t *iter_buf);
 
 STATIC const mp_obj_type_t dict_view_type = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_dict_view,
     .print = dict_view_print,
     .binary_op = dict_view_binary_op,
@@ -393,7 +393,7 @@ STATIC const mp_obj_type_t dict_view_type = {
 STATIC mp_obj_t dict_view_it_iternext(mp_obj_t self_in);
 
 STATIC const mp_obj_type_t dict_view_it_type = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_iterator,
     .getiter = mp_identity_getiter,
     .iternext = dict_view_it_iternext,
@@ -553,7 +553,7 @@ STATIC const mp_rom_map_elem_t dict_locals_dict_table[] = {
 STATIC MP_DEFINE_CONST_DICT(dict_locals_dict, dict_locals_dict_table);
 
 const mp_obj_type_t mp_type_dict = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_dict,
     .print = dict_print,
     .make_new = dict_make_new,
@@ -566,7 +566,7 @@ const mp_obj_type_t mp_type_dict = {
 
 #if MICROPY_PY_COLLECTIONS_ORDEREDDICT
 const mp_obj_type_t mp_type_ordereddict = {
-    { &mp_type_type },
+    .base = { &mp_type_type },
     .name = MP_QSTR_OrderedDict,
     .print = dict_print,
     .make_new = dict_make_new,
