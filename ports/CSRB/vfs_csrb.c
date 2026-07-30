@@ -11,8 +11,6 @@
 #include <sys/stat.h>
 
 #include <CSRBvfs.h>
-#include <CSRBfs.h>
-#include <CSRBvfsHandle.h>
 
 typedef struct _mp_obj_vfs_csrb_t {
     mp_obj_base_t base;
@@ -161,10 +159,24 @@ STATIC mp_obj_t vfs_csrb_ilistdir(mp_obj_t self_in, mp_obj_t path_in) {
 
     entries = new std::vector<std::string>;
 
-    /* TODO: ADD OPENDIR */
-    CSRBvfs::vfsHandle handle;
+    /* readdir() needs a handle from opendir() for anything under /FS, and
+     * returns RET_INVALID_HANDLE without one. */
+    CSRBvfs::vfsUID accessUID;
+    CSRBvfs::vfsHandle *handle;
 
-    ret = port_ctx->csrbVFS->readdir(path, &handle, *entries);
+    ret = port_ctx->csrbVFS->opendir(path, accessUID, &handle);
+    DEBUG(("ilistdir(): opendir %s ret:%" FORMAT_RET_T " handle:%p\n", path, ret, handle));
+    if(ret != RET_OK)
+    {
+        delete entries;
+        mp_raise_OSError(ENOENT);
+    }
+
+    ret = port_ctx->csrbVFS->readdir(path, handle, *entries);
+    DEBUG(("ilistdir(): readdir %s ret:%" FORMAT_RET_T "\n", path, ret));
+
+    port_ctx->csrbVFS->releasedir(path, &handle);
+
     if(ret != RET_OK)
     {
         delete entries;
@@ -210,9 +222,10 @@ STATIC mp_obj_t vfs_csrb_stat(mp_obj_t self_in, mp_obj_t path_in) {
     ret_t ret;
     //ret = stat(vfs_csrb_get_path_str(self, path_in), &sb);
     CSRBvfs::vfsUID accessUID;
-    CSRBvfs::vfsHandle handle;
     CSRBvfs::stat stat;
-    ret = port_ctx->csrbVFS->getattr(vfs_csrb_get_path_str(self, path_in), &handle, accessUID, stat);
+    /* No handle: getattr() resolves by path when one is not supplied.  Passing
+     * a blank handle instead makes it read metadata through that empty handle. */
+    ret = port_ctx->csrbVFS->getattr(vfs_csrb_get_path_str(self, path_in), NULL, accessUID, stat);
     DEBUG(("stat(): getattr %" FORMAT_RET_T "\n", ret));
     if (ret != RET_OK) {
         mp_raise_OSError(ENOENT);
