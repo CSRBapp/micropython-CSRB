@@ -41,6 +41,9 @@ typedef struct {
     char *consoleBuffer;
     uint32_t consoleBufferSize;
     uint32_t consoleBufferUsage;
+    /* Output no longer fits consoleBuffer; a marker has been appended and
+     * everything printed after it is dropped. */
+    bool consoleTruncated;
 } mp_port_ctx_t;
 
 extern "C" void mp_csrb_print_strn(const char *str, const uint32_t strSize);
@@ -70,6 +73,13 @@ extern void mp_CSRB_execution_begin(const uint32_t timeoutMS);
 /* Disarm the ceiling.  Returns true if the deadline was reached, which is what
  * distinguishes a timed out script from one that raised on its own. */
 extern bool mp_CSRB_execution_end(void);
+
+/* Whether a VFS shim that came back empty handed from a bounded wait - a
+ * message channel with nothing queued, a command that timed out - should try
+ * again.  True while a deadline is armed and unexpired; false with no deadline
+ * at all, so an unbounded execution keeps today's single attempt semantics
+ * instead of retrying for ever. */
+extern bool mp_CSRB_io_retry(void);
 
 /* Deadline check, called from the VM's opcode loop through the
  * MICROPY_VM_HOOK_* macros in mpconfigport.h.  Not for direct use. */

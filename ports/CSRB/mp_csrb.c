@@ -5,6 +5,7 @@
 
 #include "py/builtin.h"
 #include "py/mpstate.h"
+#include "py/pystack.h"
 #include "extmod/vfs.h"
 
 #include "mp_csrb.h"
@@ -14,6 +15,11 @@ extern "C" void nlr_jump_fail(void *val) {
     fprintf(stderr, "MICROPYTHON FATAL: uncaught NLR %p\n", val);
     exit(1);
 }
+
+/* Appended once when script output stops fitting the console buffer.  The
+ * buffer is a remote author's only view of their script, so tell them output
+ * was dropped rather than letting a clean-looking tail pass for the whole. */
+static const char mp_csrb_truncation_marker[] = "\n<<< output truncated >>>\n";
 
 void mp_csrb_print_strn(const char *str, const uint32_t strSize) {
     mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
@@ -29,11 +35,28 @@ void mp_csrb_print_strn(const char *str, const uint32_t strSize) {
 #endif
     uint32_t toWrite;
 
-    toWrite = std::min(strSize, port_ctx->consoleBufferSize - port_ctx->consoleBufferUsage - 1);
+    if(port_ctx->consoleTruncated) {
+        return;
+    }
+
+    /* Room is measured with the marker already reserved, so the marker fits
+     * whenever truncation is declared. */
+    const uint32_t reserved = (uint32_t)sizeof(mp_csrb_truncation_marker); /* includes the NUL */
+    const uint32_t room = port_ctx->consoleBufferSize - port_ctx->consoleBufferUsage - reserved;
+
+    toWrite = std::min(strSize, room);
 
     memcpy(port_ctx->consoleBuffer + port_ctx->consoleBufferUsage, str, toWrite);
 
     port_ctx->consoleBufferUsage += toWrite;
+
+    if(toWrite < strSize) {
+        memcpy(port_ctx->consoleBuffer + port_ctx->consoleBufferUsage,
+            mp_csrb_truncation_marker, reserved);
+        port_ctx->consoleBufferUsage += reserved - 1; /* keep the NUL out of the count */
+        port_ctx->consoleTruncated = true;
+        return;
+    }
 
     /* NUL must go after the appended data, not at its start */
     port_ctx->consoleBuffer[port_ctx->consoleBufferUsage] = 0;
@@ -43,9 +66,19 @@ void mp_csrb_print_strn(const char *str, const uint32_t strSize) {
 
 extern void mp_init(void);
 
+/* Arena for Python call frames (MICROPY_ENABLE_PYSTACK).  Static rather than
+ * per context because the frame pointers live in mp_state_ctx, which is
+ * process global - the same reason executions are serialised.  Exhausting it
+ * raises RuntimeError in the script; 256KB is a few thousand frames deep,
+ * far past what the C stack check would allow anyway. */
+static mp_obj_t mp_csrb_pystack[256 * 1024 / sizeof(mp_obj_t)];
+
 void mp_CSRB_init(mp_port_ctx_t *port_ctx, const CSRBvfs::vfsUID& accessUID) {
     DEBUG(("mp_CSRB_init(): entry mp_module___main__=%p port_ctx=%p uid=%u gid=%u\n",
         &mp_module___main__, port_ctx, accessUID.fields.uid, accessUID.fields.gid));
+
+    /* Must precede mp_init(). */
+    mp_pystack_init(mp_csrb_pystack, &mp_csrb_pystack[MP_ARRAY_SIZE(mp_csrb_pystack)]);
 
     /* Set before mp_init() and the mount below, both of which reach the VFS. */
     port_ctx->accessUID = accessUID;
@@ -55,6 +88,7 @@ void mp_CSRB_init(mp_port_ctx_t *port_ctx, const CSRBvfs::vfsUID& accessUID) {
     port_ctx->executionDeadlineMS = 0;
     port_ctx->executionExpired = false;
     port_ctx->openFiles = NULL;
+    port_ctx->consoleTruncated = false;
 
     MP_STATE(port_ctx) = port_ctx;
 
@@ -199,6 +233,16 @@ bool mp_CSRB_execution_end(void) {
     }
 
     return port_ctx->executionExpired;
+}
+
+bool mp_CSRB_io_retry(void) {
+    mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
+
+    if((port_ctx == NULL) || (port_ctx->executionDeadlineMS == 0)) {
+        return false;
+    }
+
+    return mp_csrb_monotonicMS() < port_ctx->executionDeadlineMS;
 }
 
 void mp_csrb_vm_hook(void) {

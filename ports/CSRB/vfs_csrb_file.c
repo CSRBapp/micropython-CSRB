@@ -6,6 +6,7 @@
 
 #include <unistd.h>
 #include <stdint.h>
+#include <time.h>
 
 #include <CSRBvfs.h>
 #include <CSRBfs.h>
@@ -180,7 +181,31 @@ STATIC mp_uint_t vfs_csrb_file_read(mp_obj_t o_in, void *buf, mp_uint_t size, in
     ret_t ret;
     uint64_t sizeRead;
 
-    ret = port_ctx->csrbVFS->read(mp_obj_str_get_str(o->filename), o->handle, true, (char *)buf, size, o->offset, sizeRead);
+    for(;;) {
+        ret = port_ctx->csrbVFS->read(mp_obj_str_get_str(o->filename), o->handle, true, (char *)buf, size, o->offset, sizeRead);
+        if(ret != RET_TIMEOUT) {
+            break;
+        }
+
+        /* The VFS waits in bounded slices - blockingTimeoutMSEC on a message
+         * channel, the command timeout on a remote operation - and each slice
+         * ignores the execution deadline, which only the VM loop enforces.
+         * Retrying between slices while the deadline holds turns "read()"
+         * into "wait until my deadline": a script blocked on a message that
+         * never comes is interrupted like any other overrunning script,
+         * instead of having to hand roll a polling loop out of 1s OSErrors.
+         *
+         * Without a deadline this makes a single attempt, as before - looping
+         * would spin on a dead peer for ever with nothing to stop it. */
+        if(!mp_CSRB_io_retry()) {
+            break;
+        }
+
+        /* The wait happens inside the VFS call; this only guards against a
+         * path that returns RET_TIMEOUT without having waited. */
+        struct timespec pause = { 0, 50 * 1000 * 1000 };
+        nanosleep(&pause, NULL);
+    }
     DEBUG(("read(): %s handle:%p size:%lu sizeRead:%" PRIu64 " ret:%" FORMAT_RET_T "\n",
         mp_obj_str_get_str(o->filename), o->handle, size, sizeRead, ret));
     switch(ret)

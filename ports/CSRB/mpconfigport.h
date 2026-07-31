@@ -1,15 +1,18 @@
 #define MICROPY_ALLOC_PATH_MAX      (PATH_MAX)
 #define MICROPY_ENABLE_GC           (1) /* CSRB: TODO CHECK */
 #define MICROPY_ENABLE_FINALISER    (0)
-/* CSRB: TODO CHECK - a separate allocator for the Python stack; if enabled,
- * the code must call mp_pystack_init() before mp_init(). */
-#define MICROPY_ENABLE_PYSTACK      (0)
+/* Python call frames come from a dedicated LIFO arena instead of the GC heap:
+ * cheaper to allocate, freed on exception unwind by nlr, and call depth is
+ * bounded by the arena instead of by heap pressure.  Generators are unaffected
+ * - their state outlives the call, so it stays in the GC heap.  The arena is
+ * set up in mp_CSRB_init(), which runs before mp_init() as required. */
+#define MICROPY_ENABLE_PYSTACK      (1)
 /* Without this, runaway recursion in a script walks off the C stack and takes
  * the process down with it.  The embedder has to record a stack top with
  * mp_stack_ctrl_init() on the thread that runs the VM, and set a limit that
  * leaves room for the deepest frame the checks cannot see between them. */
 #define MICROPY_STACK_CHECK         (1)
-#define MICROPY_COMP_CONST          (0)
+#define MICROPY_COMP_CONST          (1)
 #define MICROPY_MEM_STATS           (0)
 #define MICROPY_DEBUG_PRINTERS      (0)
 #define MICROPY_READER_POSIX        (0) /* a 1 uses system calls (open() etc) */
@@ -17,29 +20,34 @@
 #define MICROPY_HELPER_REPL         (1)
 #define MICROPY_HELPER_LEXER_UNIX   (0) /* 1: needs mp_reader_new_file_from_fd() */
 #define MICROPY_ENABLE_SOURCE_LINE  (1)
-#define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_TERSE)
+/* The console buffer is a remote author's only diagnostic channel, so spend
+ * the code size on real error messages. */
+#define MICROPY_ERROR_REPORTING     (MICROPY_ERROR_REPORTING_DETAILED)
 #define MICROPY_WARNINGS            (0)
 #define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF   (0)
-#define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_NONE)
-#define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_NONE)
+/* Scripts arrive from authors who expect Python: without floats any numeric
+ * work fails outright, and without arbitrary precision ints anything past 63
+ * bits - hashes, IDs, timestamp arithmetic - raises an overflow. */
+#define MICROPY_FLOAT_IMPL          (MICROPY_FLOAT_IMPL_DOUBLE)
+#define MICROPY_LONGINT_IMPL        (MICROPY_LONGINT_IMPL_MPZ)
 #define MICROPY_STREAMS_NON_BLOCK   (0)
-#define MICROPY_OPT_COMPUTED_GOTO   (0)
-#define MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE (0)
+#define MICROPY_OPT_COMPUTED_GOTO   (1)
+#define MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE (1)
 #define MICROPY_CAN_OVERRIDE_BUILTINS (0)
 #define MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG (0)
 #define MICROPY_CPYTHON_COMPAT      (0)
 #define MICROPY_PY_BUILTINS_BYTEARRAY (1)
 #define MICROPY_PY_BUILTINS_MEMORYVIEW (0)
 #define MICROPY_PY_BUILTINS_COMPILE (0)
-#define MICROPY_PY_BUILTINS_ENUMERATE (0)
-#define MICROPY_PY_BUILTINS_FILTER  (0)
-#define MICROPY_PY_BUILTINS_FROZENSET (0)
-#define MICROPY_PY_BUILTINS_REVERSED (0)
-#define MICROPY_PY_BUILTINS_SET     (0)
-#define MICROPY_PY_BUILTINS_SLICE   (0)
-#define MICROPY_PY_BUILTINS_STR_UNICODE (0)
-#define MICROPY_PY_BUILTINS_PROPERTY (0)
-#define MICROPY_PY_BUILTINS_MIN_MAX (0)
+#define MICROPY_PY_BUILTINS_ENUMERATE (1)
+#define MICROPY_PY_BUILTINS_FILTER  (1)
+#define MICROPY_PY_BUILTINS_FROZENSET (1)
+#define MICROPY_PY_BUILTINS_REVERSED (1)
+#define MICROPY_PY_BUILTINS_SET     (1)
+#define MICROPY_PY_BUILTINS_SLICE   (1)
+#define MICROPY_PY_BUILTINS_STR_UNICODE (1)
+#define MICROPY_PY_BUILTINS_PROPERTY (1)
+#define MICROPY_PY_BUILTINS_MIN_MAX (1)
 #define MICROPY_PY___FILE__         (0)
 #define MICROPY_PY_MICROPYTHON_MEM_INFO (0)
 #define MICROPY_PY_GC               (0)
@@ -73,8 +81,10 @@
  * mp_csrb_vm_hook() raises KeyboardInterrupt once the deadline armed by
  * mp_CSRB_execution_begin() passes; MICROPY_KBD_EXCEPTION above gives it a
  * preallocated exception to raise.  The divisor keeps the clock read off the
- * hot path: with MICROPY_OPT_COMPUTED_GOTO disabled the hook sits at the
- * pending exception check, which every backwards jump passes through. */
+ * hot path: the hook sits at the pending exception check, which every
+ * backwards jump passes through - DISPATCH_WITH_PEND_EXC_CHECK() is "goto
+ * pending_exception_check" under both dispatch modes, so this holds with
+ * MICROPY_OPT_COMPUTED_GOTO on as well. */
 #define MICROPY_VM_HOOK_COUNT       (4096)
 #define MICROPY_VM_HOOK_INIT        uint32_t vm_hook_divisor = MICROPY_VM_HOOK_COUNT;
 #define MICROPY_VM_HOOK_POLL        if(--vm_hook_divisor == 0) { \
