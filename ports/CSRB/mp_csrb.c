@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -50,9 +51,10 @@ void mp_CSRB_init(mp_port_ctx_t *port_ctx, const CSRBvfs::vfsUID& accessUID) {
     port_ctx->accessUID = accessUID;
 
     /* The context is malloc()ed rather than zeroed by the caller, so the
-     * deadline this port owns has to be disarmed explicitly. */
+     * fields this port owns have to be set explicitly. */
     port_ctx->executionDeadlineMS = 0;
     port_ctx->executionExpired = false;
+    port_ctx->openFiles = NULL;
 
     MP_STATE(port_ctx) = port_ctx;
 
@@ -70,7 +72,85 @@ void mp_CSRB_init(mp_port_ctx_t *port_ctx, const CSRBvfs::vfsUID& accessUID) {
     }
 }
 
+void mp_CSRB_file_opened(CSRBvfs::vfsHandle *handle, const char *filename) {
+    mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
+    mp_csrb_open_file_t *entry;
+
+    if((port_ctx == NULL) || (handle == NULL)) {
+        return;
+    }
+
+    entry = (mp_csrb_open_file_t*)malloc(sizeof(mp_csrb_open_file_t));
+    if(entry == NULL) {
+        /* Nothing useful to do about it here: the file is open either way, and
+         * refusing to record it only means it is closed later than it should
+         * be, when the whole interpreter goes away. */
+        DEBUG(("failed to record open handle %p (%s)\n", handle, filename));
+        return;
+    }
+
+    /* The name is copied because the one held by the file object lives in the
+     * GC heap, which the collector may reuse the moment the script drops the
+     * file - long before this list is walked. */
+    entry->filename = strdup((filename != NULL) ? filename : "");
+    entry->handle = handle;
+    entry->next = port_ctx->openFiles;
+    port_ctx->openFiles = entry;
+}
+
+void mp_CSRB_file_closed(CSRBvfs::vfsHandle *handle) {
+    mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
+    mp_csrb_open_file_t **link;
+
+    if((port_ctx == NULL) || (handle == NULL)) {
+        return;
+    }
+
+    for(link = &port_ctx->openFiles; *link != NULL; link = &(*link)->next) {
+        mp_csrb_open_file_t *entry = *link;
+
+        if(entry->handle != handle) {
+            continue;
+        }
+
+        *link = entry->next;
+        free(entry->filename);
+        free(entry);
+
+        return;
+    }
+}
+
+/* Close whatever the script left open.  Scripts are not obliged to close their
+ * files, and a handle that is never closed keeps the entry locked for as long
+ * as the node runs, so this is the point at which they have to go. */
+static void mp_csrb_close_open_files(mp_port_ctx_t *port_ctx) {
+    while(port_ctx->openFiles != NULL) {
+        mp_csrb_open_file_t *entry = port_ctx->openFiles;
+        ret_t ret;
+
+        port_ctx->openFiles = entry->next;
+
+        if(port_ctx->csrbVFS != NULL) {
+            CSRBvfs::vfsHandle *handle = entry->handle;
+
+            ret = port_ctx->csrbVFS->close(entry->filename, &handle, true, true, true);
+            DEBUG(("closing handle %p (%s) the script left open: %" FORMAT_RET_T "\n",
+                entry->handle, entry->filename, ret));
+        }
+
+        free(entry->filename);
+        free(entry);
+    }
+}
+
 void mp_CSRB_deinit(void) {
+    mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
+
+    if(port_ctx != NULL) {
+        mp_csrb_close_open_files(port_ctx);
+    }
+
     /* mp_state_ctx is process global and outlives the caller's port context.
      * Drop the reference so nothing reached afterwards - mp_csrb_print_strn()
      * in particular - writes through a consoleBuffer the caller has freed. */

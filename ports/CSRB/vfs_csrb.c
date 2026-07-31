@@ -105,33 +105,42 @@ STATIC mp_obj_t vfs_csrb_getcwd(mp_obj_t self_in) {
 }
 STATIC MP_DEFINE_CONST_FUN_OBJ_1(vfs_csrb_getcwd_obj, vfs_csrb_getcwd);
 
+/* The names are held as a list of str in the GC heap rather than as the
+ * std::vector readdir() filled in.  Nothing destroys this object: it is
+ * allocated by the collector, which reclaims it without running anything, so a
+ * script that abandons the iterator - "for name in ilistdir(): break" - would
+ * otherwise leave the vector and every string in it allocated for as long as
+ * the node runs. */
 typedef struct _vfs_csrb_ilistdir_it_t {
     mp_obj_base_t base;
     mp_fun_1_t iternext;
-    std::vector<std::string> *entries;
-    std::vector<std::string>::iterator iterator;
+    mp_obj_t entries;
+    size_t index;
 } vfs_csrb_ilistdir_it_t;
 
 STATIC mp_obj_t vfs_csrb_ilistdir_it_iternext(mp_obj_t self_in) {
     vfs_csrb_ilistdir_it_t *self = (vfs_csrb_ilistdir_it_t*)MP_OBJ_TO_PTR(self_in);
+    size_t entriesCount;
+    mp_obj_t *entries;
 
-    if (self->entries == NULL) {
+    if (self->entries == MP_OBJ_NULL) {
         return MP_OBJ_STOP_ITERATION;
     }
 
-    if (self->iterator == self->entries->end())
+    mp_obj_list_get(self->entries, &entriesCount, &entries);
+
+    if (self->index >= entriesCount)
     {
-        delete self->entries;
-        self->entries = NULL;
-        //self->iterator =;
+        /* Drop the reference so the names can be collected while the script
+         * still holds the exhausted iterator. */
+        self->entries = MP_OBJ_NULL;
         return MP_OBJ_STOP_ITERATION;
     }
 
     // make 3-tuple with info about this entry
     mp_obj_tuple_t *t = (mp_obj_tuple_t*)MP_OBJ_TO_PTR(mp_obj_new_tuple(3, NULL));
-    
-    t->items[0] = mp_obj_new_str(self->iterator->c_str(), self->iterator->size());
-    self->iterator++;
+
+    t->items[0] = entries[self->index++];
 
     t->items[1] = MP_OBJ_NEW_SMALL_INT(0);
     t->items[2] = MP_OBJ_NEW_SMALL_INT(0);
@@ -146,6 +155,8 @@ STATIC mp_obj_t vfs_csrb_ilistdir(mp_obj_t self_in, mp_obj_t path_in) {
     vfs_csrb_ilistdir_it_t *iter = m_new_obj(vfs_csrb_ilistdir_it_t);
     iter->base.type = &mp_type_polymorph_iter;
     iter->iternext = vfs_csrb_ilistdir_it_iternext;
+    iter->entries = MP_OBJ_NULL;
+    iter->index = 0;
     //iter->is_str = mp_obj_get_type(path_in) == &mp_type_str;
 
     const char *path = vfs_csrb_get_path_str(self, path_in);
@@ -182,8 +193,33 @@ STATIC mp_obj_t vfs_csrb_ilistdir(mp_obj_t self_in, mp_obj_t path_in) {
         mp_raise_OSError(ENOENT);
     }
 
-    iter->entries = entries;
-    iter->iterator = entries->begin();
+    /* Copy the names into the GC heap and let the vector go here, in the one
+     * place that can be sure it happens.  Building the list allocates, and an
+     * allocation that fails raises - which is a longjmp past every destructor
+     * in between - so catch that, free the vector and re-raise. */
+    {
+        nlr_buf_t nlr;
+
+        if(nlr_push(&nlr) == 0)
+        {
+            mp_obj_t list = mp_obj_new_list(0, NULL);
+
+            for(const std::string& entry : *entries)
+            {
+                mp_obj_list_append(list, mp_obj_new_str(entry.c_str(), entry.size()));
+            }
+
+            nlr_pop();
+            iter->entries = list;
+        }
+        else
+        {
+            delete entries;
+            nlr_jump(nlr.ret_val);
+        }
+    }
+
+    delete entries;
 
     return MP_OBJ_FROM_PTR(iter);
 }

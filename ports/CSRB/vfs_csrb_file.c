@@ -121,6 +121,10 @@ mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_o
             o->filename = file_in;
             o->handle = handle;
             o->offset = 0;
+            /* Remember it: a script that never closes the file still has to
+             * have the handle released, and the object itself may be collected
+             * without a word. */
+            mp_CSRB_file_opened(handle, fname);
             if (append) {
                 uint64_t size;
                 ret = vfs_csrb_file_size(port_ctx, o, &size);
@@ -129,7 +133,9 @@ mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_o
                      * appending at 0 would overwrite the file, so fail the
                      * open rather than silently corrupting it. */
                     DEBUG(("open: %s append getattr failed %" FORMAT_RET_T "\n", fname, ret));
-                    port_ctx->csrbVFS->close(fname, &o->handle, true, true, true);
+                    if (port_ctx->csrbVFS->close(fname, &o->handle, true, true, true) == RET_OK) {
+                        mp_CSRB_file_closed(handle);
+                    }
                     o->handle = NULL;
                     return MP_OBJ_FROM_PTR(o);
                 }
@@ -276,16 +282,23 @@ STATIC mp_uint_t vfs_csrb_file_ioctl(mp_obj_t o_in, mp_uint_t request, uintptr_t
             *errcode = 0;
             return 0;
         }
-        case MP_STREAM_CLOSE:
+        case MP_STREAM_CLOSE: {
             ret_t ret;
+            /* close() clears o->handle, so keep the value the list knows it by. */
+            CSRBvfs::vfsHandle *handle = o->handle;
+
             ret = port_ctx->csrbVFS->close(mp_obj_str_get_str(o->filename), &o->handle, true, true, true);
             if (ret != RET_OK)
             {
+                /* Still open as far as anyone can tell, so leave it on the
+                 * list for the teardown to try again. */
                 *errcode = EIO;
                 return MP_STREAM_ERROR;
             }
+            mp_CSRB_file_closed(handle);
             *errcode = 0;
             return 0;
+        }
         default:
             *errcode = EINVAL;
             return MP_STREAM_ERROR;
