@@ -1504,6 +1504,27 @@ typedef double mp_float_t;
 #define MP_ALWAYSINLINE __attribute__((always_inline))
 #endif
 
+/* CSRB: modifier for the handful of functions that walk the machine stack
+ * looking for roots.  A conservative collector reads whatever is between two
+ * stack addresses, which under AddressSanitizer means reading the redzones it
+ * puts between frames - a diagnostic the sanitizer is right to report and that
+ * the collector cannot avoid.  It also keeps the marked function's own locals
+ * off the "fake stack" ASAN would otherwise move them to, so their addresses
+ * still describe where the machine stack actually is. */
+#ifndef MP_NO_SANITIZE_ADDRESS
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define MP_NO_SANITIZE_ADDRESS __attribute__((no_sanitize("address")))
+#endif
+#endif
+#if !defined(MP_NO_SANITIZE_ADDRESS) && defined(__SANITIZE_ADDRESS__)
+#define MP_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
+#endif
+#ifndef MP_NO_SANITIZE_ADDRESS
+#define MP_NO_SANITIZE_ADDRESS
+#endif
+#endif
+
 // Condition is likely to be true, to help branch prediction
 #ifndef MP_LIKELY
 #define MP_LIKELY(x) __builtin_expect((x), 1)

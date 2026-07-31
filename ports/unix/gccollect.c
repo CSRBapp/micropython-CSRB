@@ -156,7 +156,7 @@ MP_NOINLINE void gc_collect_regs_and_stack(void);
 // LTO is enabled and a lot of inlining takes place we risk a stack
 // layout where regs is lower on the stack than pointers which have
 // just been allocated but not yet marked, and get incorrectly sweeped.
-MP_NOINLINE void gc_collect_regs_and_stack(void) {
+MP_NO_SANITIZE_ADDRESS MP_NOINLINE void gc_collect_regs_and_stack(void) {
     regs_t regs;
     gc_helper_get_regs(regs);
     // GC stack (and regs because we captured them)

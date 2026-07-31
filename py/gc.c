@@ -340,7 +340,7 @@ void gc_collect_start(void) {
     #endif
 }
 
-void gc_collect_root(void **ptrs, size_t len) {
+MP_NO_SANITIZE_ADDRESS void gc_collect_root(void **ptrs, size_t len) {
     for (size_t i = 0; i < len; i++) {
         void *ptr = ptrs[i];
         if (VERIFY_PTR(ptr)) {

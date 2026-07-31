@@ -4,8 +4,11 @@
 /* CSRB: TODO CHECK - a separate allocator for the Python stack; if enabled,
  * the code must call mp_pystack_init() before mp_init(). */
 #define MICROPY_ENABLE_PYSTACK      (0)
-/* CSRB: TODO CHECK - not checking means a segfault on C stack overflow */
-#define MICROPY_STACK_CHECK         (0)
+/* Without this, runaway recursion in a script walks off the C stack and takes
+ * the process down with it.  The embedder has to record a stack top with
+ * mp_stack_ctrl_init() on the thread that runs the VM, and set a limit that
+ * leaves room for the deepest frame the checks cannot see between them. */
+#define MICROPY_STACK_CHECK         (1)
 #define MICROPY_COMP_CONST          (0)
 #define MICROPY_MEM_STATS           (0)
 #define MICROPY_DEBUG_PRINTERS      (0)
