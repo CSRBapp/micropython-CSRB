@@ -41,8 +41,12 @@ void mp_csrb_print_strn(const char *str, const uint32_t strSize) {
 
 extern void mp_init(void);
 
-void mp_CSRB_init(mp_port_ctx_t *port_ctx) {
-    DEBUG(("mp_CSRB_init(): entry mp_module___main__=%p port_ctx=%p\n", &mp_module___main__, port_ctx));
+void mp_CSRB_init(mp_port_ctx_t *port_ctx, const CSRBvfs::vfsUID& accessUID) {
+    DEBUG(("mp_CSRB_init(): entry mp_module___main__=%p port_ctx=%p uid=%u gid=%u\n",
+        &mp_module___main__, port_ctx, accessUID.fields.uid, accessUID.fields.gid));
+
+    /* Set before mp_init() and the mount below, both of which reach the VFS. */
+    port_ctx->accessUID = accessUID;
 
     MP_STATE(port_ctx) = port_ctx;
 

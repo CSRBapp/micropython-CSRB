@@ -31,11 +31,10 @@ STATIC void vfs_csrb_file_print(const mp_print_t *print, mp_obj_t self_in, mp_pr
 
 /* Current size of an open file, needed to position for SEEK_END and 'a'. */
 STATIC ret_t vfs_csrb_file_size(mp_port_ctx_t *port_ctx, mp_obj_vfs_csrb_file_t *o, uint64_t *size) {
-    CSRBvfs::vfsUID accessUID;
     CSRBvfs::stat st;
     ret_t ret;
 
-    ret = port_ctx->csrbVFS->getattr(mp_obj_str_get_str(o->filename), o->handle, accessUID, st);
+    ret = port_ctx->csrbVFS->getattr(mp_obj_str_get_str(o->filename), o->handle, port_ctx->accessUID, st);
     if (ret == RET_OK) {
         *size = st.size;
     }
@@ -97,7 +96,6 @@ mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_o
     o->base.type = type;
 
     ret_t ret;
-    CSRBvfs::vfsUID accessUID;
     CSRBvfs::vfsHandle *handle;
 
     mp_obj_t fid = file_in;
@@ -106,7 +104,7 @@ mp_obj_t mp_vfs_csrb_file_open(const mp_obj_type_t *type, mp_obj_t file_in, mp_o
     bool directIO;
     ret = port_ctx->csrbVFS->open(
         fname,
-        accessUID,
+        port_ctx->accessUID,
         &handle,
         truncate,
         modeRead,
