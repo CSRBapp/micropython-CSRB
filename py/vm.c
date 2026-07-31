@@ -335,7 +335,7 @@ dispatch_loop:
                     DECODE_QSTR;
                     mp_obj_t top = TOP();
                     if (mp_obj_is_instance_type(mp_obj_get_type(top))) {
-                        mp_obj_instance_t *self = MP_OBJ_TO_PTR(top);
+                        mp_obj_instance_t *self = (mp_obj_instance_t*)MP_OBJ_TO_PTR(top);
                         mp_uint_t x = *ip;
                         mp_obj_t key = MP_OBJ_NEW_QSTR(qst);
                         mp_map_elem_t *elem;
@@ -433,7 +433,7 @@ dispatch_loop:
                     DECODE_QSTR;
                     mp_obj_t top = TOP();
                     if (mp_obj_is_instance_type(mp_obj_get_type(top)) && sp[-1] != MP_OBJ_NULL) {
-                        mp_obj_instance_t *self = MP_OBJ_TO_PTR(top);
+                        mp_obj_instance_t *self = (mp_obj_instance_t*)MP_OBJ_TO_PTR(top);
                         mp_uint_t x = *ip;
                         mp_obj_t key = MP_OBJ_NEW_QSTR(qst);
                         mp_map_elem_t *elem;
@@ -1228,14 +1228,14 @@ yield:
 
                 ENTRY(MP_BC_UNARY_OP_MULTI):
                     MARK_EXC_IP_SELECTIVE();
-                    SET_TOP(mp_unary_op(ip[-1] - MP_BC_UNARY_OP_MULTI, TOP()));
+                    SET_TOP(mp_unary_op((mp_unary_op_t)(ip[-1] - MP_BC_UNARY_OP_MULTI), TOP()));
                     DISPATCH();
 
                 ENTRY(MP_BC_BINARY_OP_MULTI): {
                     MARK_EXC_IP_SELECTIVE();
                     mp_obj_t rhs = POP();
                     mp_obj_t lhs = TOP();
-                    SET_TOP(mp_binary_op(ip[-1] - MP_BC_BINARY_OP_MULTI, lhs, rhs));
+                    SET_TOP(mp_binary_op((mp_binary_op_t)(ip[-1] - MP_BC_BINARY_OP_MULTI), lhs, rhs));
                     DISPATCH();
                 }
 

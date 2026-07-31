@@ -38,7 +38,7 @@ typedef struct _mp_obj_bound_meth_t {
 #if MICROPY_ERROR_REPORTING == MICROPY_ERROR_REPORTING_DETAILED
 STATIC void bound_meth_print(const mp_print_t *print, mp_obj_t o_in, mp_print_kind_t kind) {
     (void)kind;
-    mp_obj_bound_meth_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_bound_meth_t *o = (mp_obj_bound_meth_t*)MP_OBJ_TO_PTR(o_in);
     mp_printf(print, "<bound_method %p ", o);
     mp_obj_print_helper(print, o->self, PRINT_REPR);
     mp_print_str(print, ".");
@@ -52,7 +52,7 @@ mp_obj_t mp_call_method_self_n_kw(mp_obj_t meth, mp_obj_t self, size_t n_args, s
     size_t n_total = n_args + 2 * n_kw;
     mp_obj_t *args2 = NULL;
     #if MICROPY_ENABLE_PYSTACK
-    args2 = mp_pystack_alloc(sizeof(mp_obj_t) * (1 + n_total));
+    args2 = (mp_obj_t*)mp_pystack_alloc(sizeof(mp_obj_t) * (1 + n_total));
     #else
     mp_obj_t *free_args2 = NULL;
     if (n_total > 4) {
@@ -90,7 +90,7 @@ STATIC void bound_meth_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
         return;
     }
     // Delegate the load to the method object
-    mp_obj_bound_meth_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_bound_meth_t *self = (mp_obj_bound_meth_t*)MP_OBJ_TO_PTR(self_in);
     mp_load_method_maybe(self->meth, attr, dest);
 }
 #endif

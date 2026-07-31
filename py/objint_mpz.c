@@ -91,7 +91,7 @@ mp_obj_int_t *mp_obj_int_new_mpz(void) {
 char *mp_obj_int_formatted_impl(char **buf, size_t *buf_size, size_t *fmt_size, mp_const_obj_t self_in,
                                 int base, const char *prefix, char base_char, char comma) {
     assert(mp_obj_is_type(self_in, &mp_type_int));
-    const mp_obj_int_t *self = MP_OBJ_TO_PTR(self_in);
+    const mp_obj_int_t *self = (const mp_obj_int_t*)MP_OBJ_TO_PTR(self_in);
 
     size_t needed_size = mp_int_format_size(mpz_max_num_bits(&self->mpz), base, prefix, comma);
     if (needed_size > *buf_size) {
@@ -113,7 +113,7 @@ mp_obj_t mp_obj_int_from_bytes_impl(bool big_endian, size_t len, const byte *buf
 
 void mp_obj_int_to_bytes_impl(mp_obj_t self_in, bool big_endian, size_t len, byte *buf) {
     assert(mp_obj_is_type(self_in, &mp_type_int));
-    mp_obj_int_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_int_t *self = (mp_obj_int_t*)MP_OBJ_TO_PTR(self_in);
     memset(buf, 0, len);
     mpz_as_bytes(&self->mpz, big_endian, len, buf);
 }
@@ -129,7 +129,7 @@ int mp_obj_int_sign(mp_obj_t self_in) {
             return 0;
         }
     }
-    mp_obj_int_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_int_t *self = (mp_obj_int_t*)MP_OBJ_TO_PTR(self_in);
     if (self->mpz.len == 0) {
         return 0;
     } else if (self->mpz.neg == 0) {
@@ -140,7 +140,7 @@ int mp_obj_int_sign(mp_obj_t self_in) {
 }
 
 mp_obj_t mp_obj_int_unary_op(mp_unary_op_t op, mp_obj_t o_in) {
-    mp_obj_int_t *o = MP_OBJ_TO_PTR(o_in);
+    mp_obj_int_t *o = (mp_obj_int_t*)MP_OBJ_TO_PTR(o_in);
     switch (op) {
         case MP_UNARY_OP_BOOL: return mp_obj_new_bool(!mpz_is_zero(&o->mpz));
         case MP_UNARY_OP_HASH: return MP_OBJ_NEW_SMALL_INT(mpz_hash(&o->mpz));
@@ -148,7 +148,7 @@ mp_obj_t mp_obj_int_unary_op(mp_unary_op_t op, mp_obj_t o_in) {
         case MP_UNARY_OP_NEGATIVE: { mp_obj_int_t *o2 = mp_obj_int_new_mpz(); mpz_neg_inpl(&o2->mpz, &o->mpz); return MP_OBJ_FROM_PTR(o2); }
         case MP_UNARY_OP_INVERT: { mp_obj_int_t *o2 = mp_obj_int_new_mpz(); mpz_not_inpl(&o2->mpz, &o->mpz); return MP_OBJ_FROM_PTR(o2); }
         case MP_UNARY_OP_ABS: {
-            mp_obj_int_t *self = MP_OBJ_TO_PTR(o_in);
+            mp_obj_int_t *self = (mp_obj_int_t*)MP_OBJ_TO_PTR(o_in);
             if (self->mpz.neg == 0) {
                 return o_in;
             }
@@ -206,7 +206,10 @@ mp_obj_t mp_obj_int_binary_op(mp_binary_op_t op, mp_obj_t lhs_in, mp_obj_t rhs_i
 #endif
 
     if (op >= MP_BINARY_OP_INPLACE_OR && op < MP_BINARY_OP_CONTAINS) {
-        mp_obj_int_t *res = mp_obj_int_new_mpz();
+        /* CSRB: declared without an initializer so the goto above may enter
+         * this scope; C++ forbids jumping past an initialization. */
+        mp_obj_int_t *res;
+        res = mp_obj_int_new_mpz();
 
         switch (op) {
             case MP_BINARY_OP_ADD:
@@ -324,7 +327,7 @@ STATIC mpz_t *mp_mpz_for_int(mp_obj_t arg, mpz_t *temp) {
         mpz_init_from_int(temp, MP_OBJ_SMALL_INT_VALUE(arg));
         return temp;
     } else {
-        mp_obj_int_t *arp_p = MP_OBJ_TO_PTR(arg);
+        mp_obj_int_t *arp_p = (mp_obj_int_t*)MP_OBJ_TO_PTR(arg);
         return &(arp_p->mpz);
     }
 }
@@ -390,7 +393,7 @@ mp_int_t mp_obj_int_get_truncated(mp_const_obj_t self_in) {
     if (mp_obj_is_small_int(self_in)) {
         return MP_OBJ_SMALL_INT_VALUE(self_in);
     } else {
-        const mp_obj_int_t *self = MP_OBJ_TO_PTR(self_in);
+        const mp_obj_int_t *self = (const mp_obj_int_t*)MP_OBJ_TO_PTR(self_in);
         // hash returns actual int value if it fits in mp_int_t
         return mpz_hash(&self->mpz);
     }
@@ -400,7 +403,7 @@ mp_int_t mp_obj_int_get_checked(mp_const_obj_t self_in) {
     if (mp_obj_is_small_int(self_in)) {
         return MP_OBJ_SMALL_INT_VALUE(self_in);
     } else {
-        const mp_obj_int_t *self = MP_OBJ_TO_PTR(self_in);
+        const mp_obj_int_t *self = (const mp_obj_int_t*)MP_OBJ_TO_PTR(self_in);
         mp_int_t value;
         if (mpz_as_int_checked(&self->mpz, &value)) {
             return value;
@@ -414,7 +417,7 @@ mp_int_t mp_obj_int_get_checked(mp_const_obj_t self_in) {
 #if MICROPY_PY_BUILTINS_FLOAT
 mp_float_t mp_obj_int_as_float_impl(mp_obj_t self_in) {
     assert(mp_obj_is_type(self_in, &mp_type_int));
-    mp_obj_int_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_int_t *self = (mp_obj_int_t*)MP_OBJ_TO_PTR(self_in);
     return mpz_as_float(&self->mpz);
 }
 #endif

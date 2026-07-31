@@ -181,7 +181,7 @@ mp_obj_t mp_obj_str_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_
                 mp_buffer_info_t bufinfo;
                 mp_get_buffer_raise(args[0], &bufinfo, MP_BUFFER_READ);
                 #if MICROPY_PY_BUILTINS_STR_UNICODE_CHECK
-                if (!utf8_check(bufinfo.buf, bufinfo.len)) {
+                if (!utf8_check((const byte*)bufinfo.buf, bufinfo.len)) {
                     mp_raise_msg(&mp_type_UnicodeError, NULL);
                 }
                 #endif

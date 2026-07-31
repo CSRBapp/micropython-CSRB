@@ -214,10 +214,10 @@ mp_obj_t mp_binary_get_val(char struct_type, char val_type, byte **ptr) {
         return mp_obj_new_str(s_val, strlen(s_val));
 #if MICROPY_PY_BUILTINS_FLOAT
     } else if (val_type == 'f') {
-        union { uint32_t i; float f; } fpu = {val};
+        union { uint32_t i; float f; } fpu = {(uint32_t)val};
         return mp_obj_new_float(fpu.f);
     } else if (val_type == 'd') {
-        union { uint64_t i; double f; } fpu = {val};
+        union { uint64_t i; double f; } fpu = {(uint64_t)val};
         return mp_obj_new_float(fpu.f);
 #endif
     } else if (is_signed(val_type)) {

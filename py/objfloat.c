@@ -141,7 +141,7 @@ STATIC mp_obj_t float_make_new(const mp_obj_type_t *type_in, size_t n_args, size
             mp_buffer_info_t bufinfo;
             if (mp_get_buffer(args[0], &bufinfo, MP_BUFFER_READ)) {
                 // a textual representation, parse it
-                return mp_parse_num_decimal(bufinfo.buf, bufinfo.len, false, false, NULL);
+                return mp_parse_num_decimal((const char*)bufinfo.buf, bufinfo.len, false, false, NULL);
             } else if (mp_obj_is_float(args[0])) {
                 // a float, just return it
                 return args[0];
@@ -203,7 +203,7 @@ mp_obj_t mp_obj_new_float(mp_float_t value) {
 
 mp_float_t mp_obj_float_get(mp_obj_t self_in) {
     assert(mp_obj_is_float(self_in));
-    mp_obj_float_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_float_t *self = (mp_obj_float_t*)MP_OBJ_TO_PTR(self_in);
     return self->value;
 }
 

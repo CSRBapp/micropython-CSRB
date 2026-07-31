@@ -288,7 +288,7 @@ typedef struct _mp_obj_str_it_t {
 } mp_obj_str_it_t;
 
 STATIC mp_obj_t str_it_iternext(mp_obj_t self_in) {
-    mp_obj_str_it_t *self = MP_OBJ_TO_PTR(self_in);
+    mp_obj_str_it_t *self = (mp_obj_str_it_t*)MP_OBJ_TO_PTR(self_in);
     GET_STR_DATA_LEN(self->str, str, len);
     if (self->cur < len) {
         const byte *cur = str + self->cur;

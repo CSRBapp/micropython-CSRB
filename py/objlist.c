@@ -155,7 +155,7 @@ STATIC mp_obj_t list_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
         // delete
 #if MICROPY_PY_BUILTINS_SLICE
         if (mp_obj_is_type(index, &mp_type_slice)) {
-            mp_obj_list_t *self = MP_OBJ_TO_PTR(self_in);
+            mp_obj_list_t *self = (mp_obj_list_t*)MP_OBJ_TO_PTR(self_in);
             mp_bound_slice_t slice;
             if (!mp_seq_get_fast_slice_indexes(self->len, index, &slice)) {
                 mp_raise_NotImplementedError(NULL);
@@ -193,7 +193,7 @@ STATIC mp_obj_t list_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
     } else {
 #if MICROPY_PY_BUILTINS_SLICE
         if (mp_obj_is_type(index, &mp_type_slice)) {
-            mp_obj_list_t *self = MP_OBJ_TO_PTR(self_in);
+            mp_obj_list_t *self = (mp_obj_list_t*)MP_OBJ_TO_PTR(self_in);
             size_t value_len; mp_obj_t *value_items;
             mp_obj_get_array(value, &value_len, &value_items);
             mp_bound_slice_t slice_out;

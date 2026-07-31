@@ -686,6 +686,9 @@ STATIC bool mp_obj_instance_store_attr(mp_obj_t self_in, qstr attr, mp_obj_t val
     // With property and/or descriptors enabled we need to do a lookup
     // first in the class dict for the attribute to see if the store should
     // be delegated.
+    // CSRB: scoped so the goto above jumps past these initialized
+    // declarations rather than into their scope, which C++ forbids.
+    {
     mp_obj_t member[2] = {MP_OBJ_NULL};
     struct class_lookup_data lookup = {
         .obj = self,
@@ -754,6 +757,7 @@ STATIC bool mp_obj_instance_store_attr(mp_obj_t self_in, qstr attr, mp_obj_t val
             }
         }
         #endif
+    }
     }
     #endif
 
