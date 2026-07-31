@@ -63,6 +63,24 @@
 #define MICROPY_PY_BUILTINS_HELP       (1)
 #define MICROPY_PY_BUILTINS_HELP_MODULES (1)
 
+/* Bound how long a single execution may run.  Scripts arrive from the network,
+ * so without this a "while True: pass" would hold the interpreter - which is
+ * process global, and therefore serialised by the caller - for ever.
+ *
+ * mp_csrb_vm_hook() raises KeyboardInterrupt once the deadline armed by
+ * mp_CSRB_execution_begin() passes; MICROPY_KBD_EXCEPTION above gives it a
+ * preallocated exception to raise.  The divisor keeps the clock read off the
+ * hot path: with MICROPY_OPT_COMPUTED_GOTO disabled the hook sits at the
+ * pending exception check, which every backwards jump passes through. */
+#define MICROPY_VM_HOOK_COUNT       (4096)
+#define MICROPY_VM_HOOK_INIT        uint32_t vm_hook_divisor = MICROPY_VM_HOOK_COUNT;
+#define MICROPY_VM_HOOK_POLL        if(--vm_hook_divisor == 0) { \
+        vm_hook_divisor = MICROPY_VM_HOOK_COUNT; \
+        mp_csrb_vm_hook(); \
+    }
+#define MICROPY_VM_HOOK_LOOP        MICROPY_VM_HOOK_POLL
+#define MICROPY_VM_HOOK_RETURN      MICROPY_VM_HOOK_POLL
+
 /* enable module thread and support thread safety */
 #define MICROPY_PY_THREAD           (0) /* TODO: needs porting */
 /* enabme internal thread synchronization */

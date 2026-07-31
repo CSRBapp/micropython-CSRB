@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "py/builtin.h"
 #include "py/mpstate.h"
@@ -48,6 +49,11 @@ void mp_CSRB_init(mp_port_ctx_t *port_ctx, const CSRBvfs::vfsUID& accessUID) {
     /* Set before mp_init() and the mount below, both of which reach the VFS. */
     port_ctx->accessUID = accessUID;
 
+    /* The context is malloc()ed rather than zeroed by the caller, so the
+     * deadline this port owns has to be disarmed explicitly. */
+    port_ctx->executionDeadlineMS = 0;
+    port_ctx->executionExpired = false;
+
     MP_STATE(port_ctx) = port_ctx;
 
     mp_init();
@@ -65,6 +71,82 @@ void mp_CSRB_init(mp_port_ctx_t *port_ctx, const CSRBvfs::vfsUID& accessUID) {
 }
 
 void mp_CSRB_deinit(void) {
-    /* TODO: cleanup! */
+    /* mp_state_ctx is process global and outlives the caller's port context.
+     * Drop the reference so nothing reached afterwards - mp_csrb_print_strn()
+     * in particular - writes through a consoleBuffer the caller has freed. */
+    MP_STATE(port_ctx) = NULL;
+}
+
+static uint64_t mp_csrb_monotonicMS(void) {
+    struct timespec ts;
+
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+
+    return ((uint64_t) ts.tv_sec * 1000u) + ((uint64_t) ts.tv_nsec / 1000000u);
+}
+
+void mp_CSRB_execution_begin(const uint32_t timeoutMS) {
+    mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
+
+    if(port_ctx == NULL) {
+        return;
+    }
+
+    port_ctx->executionDeadlineMS = (timeoutMS != 0)
+        ? mp_csrb_monotonicMS() + timeoutMS
+        : 0;
+    port_ctx->executionExpired = false;
+}
+
+bool mp_CSRB_execution_end(void) {
+    mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
+
+    if(port_ctx == NULL) {
+        return false;
+    }
+
+    /* Disarm before returning: the deadline belongs to the execution that just
+     * finished, and anything run afterwards - the exception printer, a later
+     * call - must not inherit an already expired one. */
+    port_ctx->executionDeadlineMS = 0;
+
+    /* The VM can return - through MICROPY_VM_HOOK_RETURN, or by leaving the
+     * loop before the pending exception check - with an interrupt the hook
+     * planted still armed.  Withdraw it, or it fires during whatever runs
+     * next, quite possibly with no handler pushed. */
+    if(MP_STATE_VM(mp_pending_exception) == MP_OBJ_FROM_PTR(&MP_STATE_VM(mp_kbd_exception))) {
+        MP_STATE_VM(mp_pending_exception) = MP_OBJ_NULL;
+    }
+
+    return port_ctx->executionExpired;
+}
+
+void mp_csrb_vm_hook(void) {
+    mp_port_ctx_t *port_ctx = (mp_port_ctx_t*)MP_STATE(port_ctx);
+
+    if((port_ctx == NULL) || (port_ctx->executionDeadlineMS == 0)) {
+        return;
+    }
+
+    if(mp_csrb_monotonicMS() < port_ctx->executionDeadlineMS) {
+        return;
+    }
+
+    port_ctx->executionExpired = true;
+
+    /* Re-raise on every hook rather than only on the first one: a script that
+     * swallows the interrupt with a bare "except" would otherwise carry on
+     * running, and the caller serialises executions behind a mutex, so a
+     * script that never returns blocks every later one.  Re-arming means such
+     * a script is interrupted again at the next backwards jump and makes no
+     * further progress.
+     *
+     * The exception object is the one mp_init() preallocated, so raising it
+     * here costs no allocation.  Note that the VM only reaches this hook
+     * between bytecodes: a single long running runtime call cannot be cut
+     * short. */
+    if(MP_STATE_VM(mp_pending_exception) == MP_OBJ_NULL) {
+        MP_STATE_VM(mp_pending_exception) = MP_OBJ_FROM_PTR(&MP_STATE_VM(mp_kbd_exception));
+    }
 }
 
